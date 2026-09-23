@@ -1,30 +1,51 @@
-# vr-reference-code
+# Vulnerability Researcher Portfolio
 
-קוד מוכן להרצה עבור משימת Cyber Security Researcher. מבנה התיקיות זהה ל-repo של ה-portfolio, כדי שאפשר להעתיק ישירות.
+This repository tracks my progress through the Cyber Security Researcher track, building from foundational concepts to real-world CVE analysis.
 
-## מסגרת חוקית
-כל הקוד כאן נועד להרצה במעבדה האישית המבודדת בלבד, לצורך לימוד. אין להריץ מול מערכות שאינן בבעלות אישית.
+## Features (Work In Progress)
+- [x] **Lab Setup:** Reproducible research environment configuration.
+- [ ] **Memory Analysis:** (Under construction)
+- [ ] **Reverse Engineering:** (Under construction)
+- [ ] **Binary Exploitation:** (Under construction)
+- [ ] **CVE Analysis & Web Security:** (Under construction)
 
-## מה יש כאן
-- setup.sh - התקנת כל כלי הסביבה. להריץ ב-VM מבודד.
-- .gitignore - למניעת העלאה בטעות של flags, cores וקבצים זמניים.
-- Makefile - בונה את כל הבינארים הפגיעים עם הדגלים הנכונים.
-- 01-foundations/mem.c - תוכנית להדגמת memory layout ו-stack frame.
-- 02-reverse-engineering/crackme.c - crackme לתרגול RE (יש לעשות strip אחרי הרכבה).
-- 03-binexp-control-flow/ret2win/ - תוכנית פגיעה ו-exploit של ret2win.
-- 04-binexp-defeating-mitigations/ret2libc/ - תוכנית פגיעה ו-exploit של ret2libc שעוקף NX ו-ASLR.
+## Tech Stack
+Linux, C, Python 3, x86-64 Assembly, GDB, pwntools
 
-## הרכבה
+## Getting Started
+
+### Prerequisites
+- Ubuntu/Debian based Linux environment
+- Basic build tools (gcc, make)
+
+### Installation
 ```bash
-make all       # בונה את כל הבינארים
-make clean     # מוחק את הבינארים שנבנו
+git clone https://github.com/MiriYaakobi/vr-portfolio.git
+cd vr-portfolio
+bash setup.sh
 ```
 
-## הרצת exploits
-יש להפעיל קודם את ה-virtualenv עם pwntools:
+### Building the Binaries
 ```bash
-source ~/vr-venv/bin/activate
-cd 03-binexp-control-flow/ret2win && python3 exploit.py
+make all
+make clean
 ```
 
-הערה: ה-OFFSET ב-exploit של ret2win הוא placeholder. יש למצוא אותו עם cyclic כמתואר בשלב Binary Exploitation.
+## Running Exploits
+*(Under construction - will be updated as exploits are developed)*
+
+## Project Structure
+```text
+00-lab-setup/                   # Reproducible lab environment setup
+01-foundations/                 # (Pending)
+02-reverse-engineering/         # (Pending)
+03-binexp-control-flow/         # (Pending)
+04-binexp-defeating-mitigations/# (Pending)
+05-ctf/                         # (Pending)
+06-web/                         # (Pending)
+07-cve-analysis/                # (Pending)
+08-methodology/                 # (Pending)
+```
+
+## What I Learned
+*Currently setting up the lab environment and getting familiar with the research workflow.*
