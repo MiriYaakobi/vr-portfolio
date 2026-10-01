@@ -10,7 +10,7 @@ This repository tracks my progress through the Cyber Security Researcher track, 
 - [ ] **CVE Analysis & Web Security:** (Under construction)
 
 ## Tech Stack
-Linux, C, Python 3, x86-64 Assembly, GDB, pwntools
+Linux, C, Python 3, x86-64 Assembly, GDB (pwndbg), pwntools, Ghidra, Docker
 
 ## Getting Started
 
