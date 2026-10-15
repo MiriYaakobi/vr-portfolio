@@ -91,3 +91,23 @@ When feeding 60 'A' characters into a 32-byte buffer, the program did not crash.
 **Analysis:**
 1. **Why it didn't crash:** The program uses the `fgets` function, which explicitly enforces a boundary limit (`sizeof(name)` = 32). It safely read exactly 31 characters, appended a null-terminator (`\0`) at the 32nd position, and ignored the rest of the input. The Stack Frame (including the Saved RBP and Return Address) remained completely untouched.
 2. **Why `fgets` is safer than `gets`:** The deprecated `gets()` function lacks boundary checking. If `gets` were used, it would have blindly written all 60 bytes into memory, traversing upwards past the 32-byte boundary, overwriting the Saved RBP and the Return Address. This would leave the CPU with no valid return destination, resulting in a direct `Segmentation Fault`.
+
+---
+
+### Empirical Proof of `gets()` Vulnerability
+To practically demonstrate the theoretical danger of unconstrained input, I modified `mem.c` to use the deprecated `gets(name)` function. To force the modern GCC compiler to compile it despite the missing header declaration, I used the `-Wno-implicit-function-declaration` flag.
+
+**Compiler Warning:**
+```text
+mem.c:7:(.text+0x2d): warning: the `gets' function is dangerous and should not be used.
+```
+
+**Execution & Crash Analysis:**
+```text
+miri@vr-lab:~/vr-portfolio/01-foundations$ ./mem
+Name: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Segmentation fault         (core dumped) ./mem
+```
+
+**Conclusion:** 
+As predicted, feeding a large number of 'A' characters into the unconstrained `gets()` function allowed the input to overflow the 32-byte buffer. Because strings are written towards higher memory addresses, the input traversed upwards, blindly overwriting the adjacent local variables, the Saved RBP, and finally the Return Address. When `greet()` attempted to return to `main`, it jumped to an invalid memory address (0x4141414141414141), resulting in a classic `Segmentation fault`.
