@@ -78,3 +78,16 @@ After modifying `mem.c` to use `char name[100];` and recompiling, the stack allo
 **Analysis & Conclusions:**
 1. **Stack Order:** The variable declared second (`buffer_B`) resides at a **lower memory address** than the variable declared first (`buffer_A`). The compiler placed `buffer_A` closest to the `rbp` (higher address) and `buffer_B` immediately below it.
 2. **Exploitation Vector:** Because strings and buffer inputs are written from lower to higher addresses, an overflow originating in `buffer_B` will write upwards and directly overwrite the contents of `buffer_A`. An attacker could exploit this layout to manipulate adjacent local variables before ever reaching the Return Address.
+
+---
+
+# Exercise 4: Buffer Overflow and Safe Input Functions
+
+**Goal:** Observe the behavior of `fgets` when provided with input exceeding the buffer size.
+
+**Observations:**
+When feeding 60 'A' characters into a 32-byte buffer, the program did not crash. Instead, it printed exactly 31 'A's and exited cleanly. Noticeably, the terminal prompt appeared on the same line as the output, indicating the trailing newline was not processed.
+
+**Analysis:**
+1. **Why it didn't crash:** The program uses the `fgets` function, which explicitly enforces a boundary limit (`sizeof(name)` = 32). It safely read exactly 31 characters, appended a null-terminator (`\0`) at the 32nd position, and ignored the rest of the input. The Stack Frame (including the Saved RBP and Return Address) remained completely untouched.
+2. **Why `fgets` is safer than `gets`:** The deprecated `gets()` function lacks boundary checking. If `gets` were used, it would have blindly written all 60 bytes into memory, traversing upwards past the 32-byte boundary, overwriting the Saved RBP and the Return Address. This would leave the CPU with no valid return destination, resulting in a direct `Segmentation Fault`.
