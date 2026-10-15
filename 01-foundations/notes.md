@@ -24,12 +24,43 @@ The stack grows **downwards** in memory (from high addresses to low addresses). 
     +------------------------------------+
     Low Addresses (Bottom of Frame)
 
+### GDB Output Evidence
+The following raw GDB output confirms the exact memory addresses of the buffer, the Saved RBP, and the Return Address (Saved RIP):
+
+```text
+pwndbg> p &name
+$1 = (char (*)[32]) 0x7fffffffdc60
+
+pwndbg> x/6gx $rbp
+0x7fffffffdc80: 0x00007fffffffdc90  0x00000000004011b9
+0x7fffffffdc90: 0x00007fffffffdd40  0x00007ffff7c2a601
+0x7fffffffdca0: 0x00007fffffffdd80  0x00007fffffffddc8
+```
+
 ## 3. Overflow Calculation
 Based on our dynamic analysis in GDB, we can calculate the exact distance from the start of our user input to the target Return Address:
 
 * **Buffer Start Address:** `0x7fffffffdc60` (`p &name`)
-* **Return Address Location:** `0x7fffffffdc88` (`$rbp + 8`)
+* **Return Address Location:** `0x7fffffffdc88` (`\$rbp + 8`)
 * **Distance:** `0x7fffffffdc88 - 0x7fffffffdc60 = 0x28` (40 bytes in decimal).
 
 **Conclusion:** 
 To successfully hijack the execution flow and overwrite the Return Address, an attacker must supply exactly **40 bytes** of padding (32 bytes to fill the buffer + 8 bytes to overwrite the Saved RBP). The 41st byte will begin overwriting the Return Address.
+
+---
+
+# Exercise 2: Buffer Resizing and Stack Alignment
+
+**Goal:** Observe how modifying the buffer size from 32 to 100 bytes affects the stack frame layout.
+
+**Observations (Static Analysis):**
+After modifying `mem.c` to use `char name[100];` and recompiling, the stack allocation instruction in `objdump` changed to:
+`sub rsp, 0x70`
+
+**Analysis & Offset Calculation:**
+1. The compiler allocated `0x70` (112 bytes in decimal) instead of 100 bytes. 
+2. This discrepancy is due to the **16-byte stack alignment rule** in the x86-64 calling convention. The compiler padded the 100-byte buffer with 12 extra bytes to align the stack pointer before subsequent function calls.
+3. **New Target Distance:** To overwrite the Return Address, the attacker must traverse the new allocation and the Saved RBP:
+   * Distance to RBP (Buffer + Padding): 112 bytes
+   * Saved RBP size: 8 bytes
+   * Total required offset: **120 bytes**. The 121st byte will start overwriting the Return Address.

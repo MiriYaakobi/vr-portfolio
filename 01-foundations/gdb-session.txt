@@ -1,0 +1,20 @@
+miri@vr-lab:~/vr-portfolio/01-foundations$ gdb ./mem
+pwndbg> break greet
+Breakpoint 1 at 0x401162: file mem.c, line 6.
+
+pwndbg> run
+Starting program: /home/miri/vr-portfolio/01-foundations/mem 
+Breakpoint 1, greet () at mem.c:6
+6       printf("Name: ");
+
+pwndbg> n
+pwndbg> n
+MiriYaakobi
+
+pwndbg> p &name
+$1 = (char (*)[32]) 0x7fffffffdc60
+
+pwndbg> x/6gx $rbp
+0x7fffffffdc80: 0x00007fffffffdc90  0x00000000004011b9
+0x7fffffffdc90: 0x00007fffffffdd40  0x00007ffff7c2a601
+0x7fffffffdca0: 0x00007fffffffdd80  0x00007fffffffddc8
