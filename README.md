@@ -4,7 +4,7 @@ This repository tracks my progress through the Cyber Security Researcher track, 
 
 ## Features (Work In Progress)
 - [x] **Lab Setup:** Reproducible research environment configuration.
-- [ ] **Memory Analysis:** (Under construction)
+- [x] **Memory Analysis:** Stack frame mapping, stack alignment, and basic buffer overflow mechanics.
 - [ ] **Reverse Engineering:** (Under construction)
 - [ ] **Binary Exploitation:** (Under construction)
 - [ ] **CVE Analysis & Web Security:** (Under construction)
@@ -37,7 +37,7 @@ make clean
 ## Project Structure
 ```text
 00-lab-setup/                   # Reproducible lab environment setup
-01-foundations/                 # (Pending)
+01-foundations/                 # Stack memory layout, GDB static/dynamic analysis, and overflow concepts
 02-reverse-engineering/         # (Pending)
 03-binexp-control-flow/         # (Pending)
 04-binexp-defeating-mitigations/# (Pending)
@@ -48,4 +48,4 @@ make clean
 ```
 
 ## What I Learned
-*Currently setting up the lab environment and getting familiar with the research workflow.*
+* **Module 01 (Foundations):** Mastered x86-64 stack frame layout, compiler stack alignment, and static/dynamic memory analysis using GDB/pwndbg. Practically demonstrated buffer overflow vulnerabilities by exploiting unconstrained input bounds.
