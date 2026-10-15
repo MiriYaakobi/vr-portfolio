@@ -40,9 +40,9 @@ pwndbg> x/6gx $rbp
 ## 3. Overflow Calculation
 Based on our dynamic analysis in GDB, we can calculate the exact distance from the start of our user input to the target Return Address:
 
-* **Buffer Start Address:** `0x7fffffffdc60` (`p &name`)
-* **Return Address Location:** `0x7fffffffdc88` (`\$rbp + 8`)
-* **Distance:** `0x7fffffffdc88 - 0x7fffffffdc60 = 0x28` (40 bytes in decimal).
+- **Buffer Start Address:** `0x7fffffffdc60` (`p &name`)
+- **Return Address Location:** `0x7fffffffdc88` (`$rbp + 8`)
+- **Distance:** `0x7fffffffdc88 - 0x7fffffffdc60 = 0x28` (40 bytes in decimal).
 
 **Conclusion:** 
 To successfully hijack the execution flow and overwrite the Return Address, an attacker must supply exactly **40 bytes** of padding (32 bytes to fill the buffer + 8 bytes to overwrite the Saved RBP). The 41st byte will begin overwriting the Return Address.
@@ -53,17 +53,20 @@ To successfully hijack the execution flow and overwrite the Return Address, an a
 
 **Goal:** Observe how modifying the buffer size from 32 to 100 bytes affects the stack frame layout.
 
-**Observations (Static Analysis):**
-After modifying `mem.c` to use `char name[100];` and recompiling, the stack allocation instruction in `objdump` changed to:
-`sub rsp, 0x70`
+**Observations & Evidence (Static Analysis):**
+After modifying `name` to 100 bytes and recompiling, running `objdump -d -M intel mem` showed the following prologue for `greet`:
+
+```text
+0000000000401146 <greet>:
+  ...
+  40114a:	48 81 ec 70 00 00 00 	sub    rsp,0x70
+  ...
+```
 
 **Analysis & Offset Calculation:**
-1. The compiler allocated `0x70` (112 bytes in decimal) instead of 100 bytes. 
-2. This discrepancy is due to the **16-byte stack alignment rule** in the x86-64 calling convention. The compiler padded the 100-byte buffer with 12 extra bytes to align the stack pointer before subsequent function calls.
-3. **New Target Distance:** To overwrite the Return Address, the attacker must traverse the new allocation and the Saved RBP:
-   * Distance to RBP (Buffer + Padding): 112 bytes
-   * Saved RBP size: 8 bytes
-   * Total required offset: **120 bytes**. The 121st byte will start overwriting the Return Address.
+1. As shown in the `objdump` output, the compiler allocated `0x70` (112 bytes in decimal) instead of 100 bytes via the `sub rsp, 0x70` instruction. 
+2. This discrepancy is due to the **16-byte stack alignment rule** in the x86-64 calling convention. The compiler padded the 100-byte buffer with 12 extra bytes to align the stack pointer.
+3. **New Target Distance:** Because the allocation is 112 bytes, the distance from the start of `name` to the Return Address is 112 bytes (buffer + padding) + 8 bytes (Saved RBP) = **120 bytes**. The 121st byte will start overwriting the Return Address.
 
 ---
 
@@ -71,26 +74,50 @@ After modifying `mem.c` to use `char name[100];` and recompiling, the stack allo
 
 **Goal:** Determine the stack arrangement of multiple local variables and understand the implications for buffer overflow attacks.
 
-**GDB Observations:**
-* `buffer_A[16]` address: `0x7fffffffdc60`
-* `buffer_B[32]` address: `0x7fffffffdc40`
+**GDB Evidence:**
+We printed the addresses of both buffers in GDB to determine their exact placement on the stack:
+
+```text
+pwndbg> p &buffer_A
+$1 = (char (*)[16]) 0x7fffffffdc60
+pwndbg> p &buffer_B
+$2 = (char (*)[32]) 0x7fffffffdc40
+```
 
 **Analysis & Conclusions:**
-1. **Stack Order:** The variable declared second (`buffer_B`) resides at a **lower memory address** than the variable declared first (`buffer_A`). The compiler placed `buffer_A` closest to the `rbp` (higher address) and `buffer_B` immediately below it.
-2. **Exploitation Vector:** Because strings and buffer inputs are written from lower to higher addresses, an overflow originating in `buffer_B` will write upwards and directly overwrite the contents of `buffer_A`. An attacker could exploit this layout to manipulate adjacent local variables before ever reaching the Return Address.
+1. **Stack Order:** Based on the GDB output, the variable declared second (`buffer_B` at `0x7fffffffdc40`) resides at a **lower memory address** than the variable declared first (`buffer_A` at `0x7fffffffdc60`). The exact distance between them is `0x20` (32 bytes).
+2. **Exploitation Vector:** Because strings and inputs are written from lower to higher addresses, an overflow originating in `buffer_B` will write upwards and directly overwrite the contents of `buffer_A`. An attacker could exploit this layout to manipulate adjacent local variables before ever reaching the Return Address.
 
 ---
 
 # Exercise 4: Buffer Overflow and Safe Input Functions
 
-**Goal:** Observe the behavior of `fgets` when provided with input exceeding the buffer size.
+**Goal:** Observe the behavior of `fgets` when provided with input exceeding the buffer size, and understand how it handles leftover input.
 
-**Observations:**
-When feeding 60 'A' characters into a 32-byte buffer, the program did not crash. Instead, it printed exactly 31 'A's and exited cleanly. Noticeably, the terminal prompt appeared on the same line as the output, indicating the trailing newline was not processed.
+**Evidence (Consecutive Reads Experiment):**
+To test what happens to the characters that exceed the 32-byte limit, we added a second `fgets` call immediately after the first one:
+
+```c
+char name[32];
+char extra[32];
+fgets(name, sizeof(name), stdin);
+printf("Hello, %s\n", name);
+fgets(extra, sizeof(extra), stdin);
+printf("Extra: %s\n", extra);
+```
+
+**Execution Output:**
+```text
+miri@vr-lab:~/vr-portfolio/01-foundations$ ./mem
+Name: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Hello, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Extra: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+```
 
 **Analysis:**
-1. **Why it didn't crash:** The program uses the `fgets` function, which explicitly enforces a boundary limit (`sizeof(name)` = 32). It safely read exactly 31 characters, appended a null-terminator (`\0`) at the 32nd position, and ignored the rest of the input. The Stack Frame (including the Saved RBP and Return Address) remained completely untouched.
-2. **Why `fgets` is safer than `gets`:** The deprecated `gets()` function lacks boundary checking. If `gets` were used, it would have blindly written all 60 bytes into memory, traversing upwards past the 32-byte boundary, overwriting the Saved RBP and the Return Address. This would leave the CPU with no valid return destination, resulting in a direct `Segmentation Fault`.
+1. **Why it didn't crash:** `fgets` safely limits the read operation to the specified boundary (`sizeof(name)` = 32). It reads exactly 31 characters and appends a null-terminator (`\0`). The Stack Frame remains completely untouched.
+2. **Leftover `stdin` data:** `fgets` does *not* throw away or ignore the unread characters. The remaining characters from the line stay in the `stdin` buffer. As proven by the experiment, a subsequent call to `fgets` immediately consumes this leftover input without waiting for the user to type anything new. This is critical because uncleaned leftover input can cause unexpected behavior or vulnerabilities in programs that read multiple times.
+3. **Why `fgets` is safer than `gets`:** The deprecated `gets()` function lacks boundary checking. If `gets` were used, it would have blindly written all 60 bytes into memory, overwriting the Saved RBP and the Return Address, resulting in a direct `Segmentation Fault`.
 
 ---
 
