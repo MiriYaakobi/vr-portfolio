@@ -64,3 +64,17 @@ After modifying `mem.c` to use `char name[100];` and recompiling, the stack allo
    * Distance to RBP (Buffer + Padding): 112 bytes
    * Saved RBP size: 8 bytes
    * Total required offset: **120 bytes**. The 121st byte will start overwriting the Return Address.
+
+---
+
+# Exercise 3: Multiple Local Variables Layout
+
+**Goal:** Determine the stack arrangement of multiple local variables and understand the implications for buffer overflow attacks.
+
+**GDB Observations:**
+* `buffer_A[16]` address: `0x7fffffffdc60`
+* `buffer_B[32]` address: `0x7fffffffdc40`
+
+**Analysis & Conclusions:**
+1. **Stack Order:** The variable declared second (`buffer_B`) resides at a **lower memory address** than the variable declared first (`buffer_A`). The compiler placed `buffer_A` closest to the `rbp` (higher address) and `buffer_B` immediately below it.
+2. **Exploitation Vector:** Because strings and buffer inputs are written from lower to higher addresses, an overflow originating in `buffer_B` will write upwards and directly overwrite the contents of `buffer_A`. An attacker could exploit this layout to manipulate adjacent local variables before ever reaching the Return Address.
