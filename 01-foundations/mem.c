@@ -2,7 +2,7 @@
 #include <string.h>
 
 void greet(void) {
-    char name[32];
+    char name[100];
     printf("Name: ");
     fgets(name, sizeof(name), stdin);
     printf("Hello, %s", name);
