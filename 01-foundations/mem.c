@@ -3,11 +3,9 @@
 
 void greet(void) {
     char name[32];
-    char extra[32];
     printf("Name: ");
     fgets(name, sizeof(name), stdin);
-    printf("Hello, %s\n", name);
-    fgets(extra, sizeof(extra), stdin);
+    printf("Hello, %s", name);
 }
 
 int main(void) {
