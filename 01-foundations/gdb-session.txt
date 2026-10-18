@@ -1,20 +1,238 @@
 miri@vr-lab:~/vr-portfolio/01-foundations$ gdb ./mem
+GNU gdb (Ubuntu 17.1-2ubuntu1) 17.1
+Copyright (C) 2025 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<https://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+pwndbg: loaded 199 pwndbg commands. Type pwndbg [filter] for a list.
+pwndbg: created 12 GDB functions (can be used with print/break). Type help function to see them.
+
+You have debuginfod.ubuntu.com in your debuginfod urls and will experience stalls because of this.
+We recommend you remove it until ubuntu fixes their server.
+See https://github.com/pwndbg/pwndbg/pull/4079 for more info.
+
+Reading symbols from ./mem...
+------- tip of the day (disable with set show-tips off) -------
+Use the killall command to kill all specified threads (via their ids)
 pwndbg> break greet
 Breakpoint 1 at 0x401162: file mem.c, line 6.
-
 pwndbg> run
 Starting program: /home/miri/vr-portfolio/01-foundations/mem 
+Download failed: Connection refused.  Continuing without separate debug info for system-supplied DSO at 0x7ffff7fbe000.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/x86_64-linux-gnu/libthread_db.so.1".
+
 Breakpoint 1, greet () at mem.c:6
-6       printf("Name: ");
-
+6	    printf("Name: ");
+LEGEND: STACK | HEAP | CODE | DATA | WX | RODATA
+────────────────────────────────────────────────────────────────────[ REGISTERS / show-flags off / show-compact-regs off ]────────────────────────────────────────────────────────────────────
+ RAX  0x7ffff7e19de8 (environ) —▸ 0x7fffffffddd8 —▸ 0x7fffffffe15b ◂— 'SHELL=/bin/bash'
+ RBX  0
+ RCX  0x403e00 (__do_global_dtors_aux_fini_array_entry) —▸ 0x401120 (__do_global_dtors_aux) ◂— endbr64
+ RDX  0x7fffffffddd8 —▸ 0x7fffffffe15b ◂— 'SHELL=/bin/bash'
+ RDI  1
+ RSI  0x7fffffffddc8 —▸ 0x7fffffffe130 ◂— '/home/miri/vr-portfolio/01-foundations/mem'
+ R8   0x7ffff7e12680 (__exit_funcs) —▸ 0x7ffff7e13fa0 (initial) ◂— 0
+ R9   0x7ffff7e13fa0 (initial) ◂— 0
+ R10  0
+ R11  0x203
+ R12  0x7fffffffddc8 —▸ 0x7fffffffe130 ◂— '/home/miri/vr-portfolio/01-foundations/mem'
+ R13  1
+ R14  0x7ffff7ffd000 (_rtld_global) —▸ 0x7ffff7ffe2e0 ◂— 0
+ R15  0x403e00 (__do_global_dtors_aux_fini_array_entry) —▸ 0x401120 (__do_global_dtors_aux) ◂— endbr64
+ RBP  0x7fffffffdc80 —▸ 0x7fffffffdc90 —▸ 0x7fffffffdd40 —▸ 0x7fffffffdda0 ◂— 0
+ RSP  0x7fffffffdc60 {name} ◂— 0
+ RIP  0x401162 (greet+12) ◂— lea rax, [rip + 0xe9b]
+─────────────────────────────────────────────────────────────────────────────[ DISASM / x86-64 / set emulate on ]─────────────────────────────────────────────────────────────────────────────
+   0x40115a <greet+4>     push   rbp
+   0x40115b <greet+5>     mov    rbp, rsp
+   0x40115e <greet+8>     sub    rsp, 0x20
+b► 0x401162 <greet+12>    lea    rax, [rip + 0xe9b]     RAX => 0x402004 ◂— 0x4800203a656d614e /* 'Name: ' */
+   0x401169 <greet+19>    mov    rdi, rax               RDI => 0x402004 ◂— 0x4800203a656d614e /* 'Name: ' */
+   0x40116c <greet+22>    mov    eax, 0                 EAX => 0
+   0x401171 <greet+27>    call   printf@plt                  <printf@plt>
+ 
+   0x401176 <greet+32>    mov    rdx, qword ptr [rip + 0x2ea3]     RDX, [stdin@GLIBC_2.2.5]
+   0x40117d <greet+39>    lea    rax, [rbp - 0x20]
+   0x401181 <greet+43>    mov    esi, 0x20                         ESI => 0x20
+   0x401186 <greet+48>    mov    rdi, rax
+──────────────────────────────────────────────────────────────────────────────────────[ SOURCE (CODE) ]───────────────────────────────────────────────────────────────────────────────────────
+In file: /home/miri/vr-portfolio/01-foundations/mem.c:6
+    1 #include <stdio.h>
+    2 #include <string.h>
+    3 
+    4 void greet(void) {
+    5     char name[32];
+ ►  6     printf("Name: ");
+    7     fgets(name, sizeof(name), stdin);
+    8     printf("Hello, %s", name);
+    9 }
+   10 
+   11 int main(void) {
+   12     greet();
+   13     return 0;
+   14 }
+──────────────────────────────────────────────────────────────────────────────────────────[ STACK ]───────────────────────────────────────────────────────────────────────────────────────────
+00:0000│ rsp 0x7fffffffdc60 {name} ◂— 0
+... ↓        3 skipped
+04:0020│ rbp 0x7fffffffdc80 —▸ 0x7fffffffdc90 —▸ 0x7fffffffdd40 —▸ 0x7fffffffdda0 ◂— 0
+05:0028│+008 0x7fffffffdc88 —▸ 0x4011b9 (main+13) ◂— mov eax, 0
+06:0030│+010 0x7fffffffdc90 —▸ 0x7fffffffdd40 —▸ 0x7fffffffdda0 ◂— 0
+07:0038│+018 0x7fffffffdc98 —▸ 0x7ffff7c2a601 (__libc_start_call_main+129) ◂— mov edi, eax
+────────────────────────────────────────────────────────────────────────────────────────[ BACKTRACE ]─────────────────────────────────────────────────────────────────────────────────────────
+ ► 0 0x401162       greet+12
+   1 0x4011b9       main+13
+   2 0x7ffff7c2a601 __libc_start_call_main+129
+   3 0x7ffff7c2a718 __libc_start_main+136
+   4 0x401095       _start+37
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 pwndbg> n
+7	    fgets(name, sizeof(name), stdin);
+LEGEND: STACK | HEAP | CODE | DATA | WX | RODATA
+────────────────────────────────────────────────────────────────────[ REGISTERS / show-flags off / show-compact-regs off ]────────────────────────────────────────────────────────────────────
+*RAX  6
+ RBX  0
+*RCX  0
+*RDX  0
+*RDI  0x7fffffffda80 —▸ 0x7fffffffdab0 ◂— 0x203a656d614e /* 'Name: ' */
+*RSI  0x405010 ◂— 0x203a656d614e /* 'Name: ' */
+*R8   6
+*R9   0
+*R10  0x410
+*R11  0x7ffff7e12ac0 (main_arena) ◂— 0
+ R12  0x7fffffffddc8 —▸ 0x7fffffffe130 ◂— '/home/miri/vr-portfolio/01-foundations/mem'
+ R13  1
+ R14  0x7ffff7ffd000 (_rtld_global) —▸ 0x7ffff7ffe2e0 ◂— 0
+ R15  0x403e00 (__do_global_dtors_aux_fini_array_entry) —▸ 0x401120 (__do_global_dtors_aux) ◂— endbr64
+ RBP  0x7fffffffdc80 —▸ 0x7fffffffdc90 —▸ 0x7fffffffdd40 —▸ 0x7fffffffdda0 ◂— 0
+ RSP  0x7fffffffdc60 {name} ◂— 0
+*RIP  0x401176 (greet+32) ◂— mov rdx, qword ptr [rip + 0x2ea3]
+─────────────────────────────────────────────────────────────────────────────[ DISASM / x86-64 / set emulate on ]─────────────────────────────────────────────────────────────────────────────
+   0x40115e <greet+8>     sub    rsp, 0x20
+b+ 0x401162 <greet+12>    lea    rax, [rip + 0xe9b]     RAX => 0x402004 ◂— 0x4800203a656d614e /* 'Name: ' */
+   0x401169 <greet+19>    mov    rdi, rax               RDI => 0x402004 ◂— 0x4800203a656d614e /* 'Name: ' */
+   0x40116c <greet+22>    mov    eax, 0                 EAX => 0
+   0x401171 <greet+27>    call   printf@plt                  <printf@plt>
+ 
+ ► 0x401176 <greet+32>    mov    rdx, qword ptr [rip + 0x2ea3]     RDX, [stdin@GLIBC_2.2.5] => 0x7ffff7e128e0 (_IO_2_1_stdin_) ◂— 0xfbad2088
+   0x40117d <greet+39>    lea    rax, [rbp - 0x20]                 RAX => 0x7fffffffdc60 ◂— 0
+   0x401181 <greet+43>    mov    esi, 0x20                         ESI => 0x20
+   0x401186 <greet+48>    mov    rdi, rax                          RDI => 0x7fffffffdc60 ◂— 0
+   0x401189 <greet+51>    call   fgets@plt                   <fgets@plt>
+ 
+   0x40118e <greet+56>    lea    rax, [rbp - 0x20]
+──────────────────────────────────────────────────────────────────────────────────────[ SOURCE (CODE) ]───────────────────────────────────────────────────────────────────────────────────────
+In file: /home/miri/vr-portfolio/01-foundations/mem.c:7
+    1 #include <stdio.h>
+    2 #include <string.h>
+    3 
+    4 void greet(void) {
+    5     char name[32];
+    6     printf("Name: ");
+ ►  7     fgets(name, sizeof(name), stdin);
+    8     printf("Hello, %s", name);
+    9 }
+   10 
+   11 int main(void) {
+   12     greet();
+   13     return 0;
+   14 }
+──────────────────────────────────────────────────────────────────────────────────────────[ STACK ]───────────────────────────────────────────────────────────────────────────────────────────
+00:0000│ rsp 0x7fffffffdc60 {name} ◂— 0
+... ↓        3 skipped
+04:0020│ rbp 0x7fffffffdc80 —▸ 0x7fffffffdc90 —▸ 0x7fffffffdd40 —▸ 0x7fffffffdda0 ◂— 0
+05:0028│+008 0x7fffffffdc88 —▸ 0x4011b9 (main+13) ◂— mov eax, 0
+06:0030│+010 0x7fffffffdc90 —▸ 0x7fffffffdd40 —▸ 0x7fffffffdda0 ◂— 0
+07:0038│+018 0x7fffffffdc98 —▸ 0x7ffff7c2a601 (__libc_start_call_main+129) ◂— mov edi, eax
+────────────────────────────────────────────────────────────────────────────────────────[ BACKTRACE ]─────────────────────────────────────────────────────────────────────────────────────────
+ ► 0 0x401176       greet+32
+   1 0x4011b9       main+13
+   2 0x7ffff7c2a601 __libc_start_call_main+129
+   3 0x7ffff7c2a718 __libc_start_main+136
+   4 0x401095       _start+37
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 pwndbg> n
-MiriYaakobi
-
+Name: MiriYaakobi
+8	    printf("Hello, %s", name);
+LEGEND: STACK | HEAP | CODE | DATA | WX | RODATA
+────────────────────────────────────────────────────────────────────[ REGISTERS / show-flags off / show-compact-regs off ]────────────────────────────────────────────────────────────────────
+*RAX  0x7fffffffdc60 {name} ◂— 'MiriYaakobi\n'
+ RBX  0
+*RCX  0x7ffff7e14760 (_IO_stdfile_0_lock) ◂— 0
+*RDX  0x7ffff7e14760 (_IO_stdfile_0_lock) ◂— 0
+*RDI  0x7fffffffdc61 {name+0x1} ◂— 'iriYaakobi\n'
+*RSI  0x6f6b616159697269 ('iriYaako')
+*R8   0x40542c ◂— 0
+ R9   0
+*R10  0
+*R11  0x202
+ R12  0x7fffffffddc8 —▸ 0x7fffffffe130 ◂— '/home/miri/vr-portfolio/01-foundations/mem'
+ R13  1
+ R14  0x7ffff7ffd000 (_rtld_global) —▸ 0x7ffff7ffe2e0 ◂— 0
+ R15  0x403e00 (__do_global_dtors_aux_fini_array_entry) —▸ 0x401120 (__do_global_dtors_aux) ◂— endbr64
+ RBP  0x7fffffffdc80 —▸ 0x7fffffffdc90 —▸ 0x7fffffffdd40 —▸ 0x7fffffffdda0 ◂— 0
+ RSP  0x7fffffffdc60 {name} ◂— 'MiriYaakobi\n'
+*RIP  0x40118e (greet+56) ◂— lea rax, [rbp - 0x20]
+─────────────────────────────────────────────────────────────────────────────[ DISASM / x86-64 / set emulate on ]─────────────────────────────────────────────────────────────────────────────
+   0x401176 <greet+32>    mov    rdx, qword ptr [rip + 0x2ea3]     RDX, [stdin@GLIBC_2.2.5] => 0x7ffff7e128e0 (_IO_2_1_stdin_) ◂— 0xfbad2088
+   0x40117d <greet+39>    lea    rax, [rbp - 0x20]                 RAX => 0x7fffffffdc60 ◂— 0
+   0x401181 <greet+43>    mov    esi, 0x20                         ESI => 0x20
+   0x401186 <greet+48>    mov    rdi, rax                          RDI => 0x7fffffffdc60 ◂— 0
+   0x401189 <greet+51>    call   fgets@plt                   <fgets@plt>
+ 
+ ► 0x40118e <greet+56>    lea    rax, [rbp - 0x20]      RAX => 0x7fffffffdc60 ◂— 'MiriYaakobi\n'
+   0x401192 <greet+60>    lea    rdx, [rip + 0xe72]     RDX => 0x40200b ◂— 'Hello, %s'
+   0x401199 <greet+67>    mov    rsi, rax               RSI => 0x7fffffffdc60 ◂— 'MiriYaakobi\n'
+   0x40119c <greet+70>    mov    rdi, rdx               RDI => 0x40200b ◂— 'Hello, %s'
+   0x40119f <greet+73>    mov    eax, 0                 EAX => 0
+   0x4011a4 <greet+78>    call   printf@plt                  <printf@plt>
+──────────────────────────────────────────────────────────────────────────────────────[ SOURCE (CODE) ]───────────────────────────────────────────────────────────────────────────────────────
+In file: /home/miri/vr-portfolio/01-foundations/mem.c:8
+    1 #include <stdio.h>
+    2 #include <string.h>
+    3 
+    4 void greet(void) {
+    5     char name[32];
+    6     printf("Name: ");
+    7     fgets(name, sizeof(name), stdin);
+ ►  8     printf("Hello, %s", name);
+    9 }
+   10 
+   11 int main(void) {
+   12     greet();
+   13     return 0;
+   14 }
+──────────────────────────────────────────────────────────────────────────────────────────[ STACK ]───────────────────────────────────────────────────────────────────────────────────────────
+00:0000│ rax rsp rdi-1 0x7fffffffdc60 {name} ◂— 'MiriYaakobi\n'
+01:0008│-018           0x7fffffffdc68 {name+0x8} ◂— 0xa69626f /* 'obi\n' */
+02:0010│-010           0x7fffffffdc70 {name+0x10} ◂— 0
+03:0018│-008           0x7fffffffdc78 {name+0x18} ◂— 0
+04:0020│ rbp           0x7fffffffdc80 —▸ 0x7fffffffdc90 —▸ 0x7fffffffdd40 —▸ 0x7fffffffdda0 ◂— 0
+05:0028│+008           0x7fffffffdc88 —▸ 0x4011b9 (main+13) ◂— mov eax, 0
+06:0030│+010           0x7fffffffdc90 —▸ 0x7fffffffdd40 —▸ 0x7fffffffdda0 ◂— 0
+07:0038│+018           0x7fffffffdc98 —▸ 0x7ffff7c2a601 (__libc_start_call_main+129) ◂— mov edi, eax
+────────────────────────────────────────────────────────────────────────────────────────[ BACKTRACE ]─────────────────────────────────────────────────────────────────────────────────────────
+ ► 0 0x40118e       greet+56
+   1 0x4011b9       main+13
+   2 0x7ffff7c2a601 __libc_start_call_main+129
+   3 0x7ffff7c2a718 __libc_start_main+136
+   4 0x401095       _start+37
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 pwndbg> p &name
 $1 = (char (*)[32]) 0x7fffffffdc60
-
 pwndbg> x/6gx $rbp
-0x7fffffffdc80: 0x00007fffffffdc90  0x00000000004011b9
-0x7fffffffdc90: 0x00007fffffffdd40  0x00007ffff7c2a601
-0x7fffffffdca0: 0x00007fffffffdd80  0x00007fffffffddc8
+0x7fffffffdc80:	0x00007fffffffdc90	0x00000000004011b9
+0x7fffffffdc90:	0x00007fffffffdd40	0x00007ffff7c2a601
+0x7fffffffdca0:	0x00007fffffffdd80	0x00007fffffffddc8
+pwndbg> q
+miri@vr-lab:~/vr-portfolio/01-foundations$ 
