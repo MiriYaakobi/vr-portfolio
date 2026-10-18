@@ -38,7 +38,7 @@ pwndbg> x/6gx $rbp
 ```
 
 ## 3. Overflow Calculation
-Based on our dynamic analysis in GDB, we can calculate the exact distance from the start of our user input to the target Return Address:
+Based on my dynamic analysis in GDB, I can calculate the exact distance from the start of my user input to the target Return Address:
 
 - **Buffer Start Address:** `0x7fffffffdc60` (`p &name`)
 - **Return Address Location:** `0x7fffffffdc88` (`$rbp + 8`)
@@ -59,7 +59,7 @@ After modifying `name` to 100 bytes and recompiling, running `objdump -d -M inte
 ```text
 0000000000401146 <greet>:
   ...
-  40114a:	48 81 ec 70 00 00 00 	sub    rsp,0x70
+  40114a:   48 81 ec 70 00 00 00    sub    rsp,0x70
   ...
 ```
 
@@ -75,18 +75,18 @@ After modifying `name` to 100 bytes and recompiling, running `objdump -d -M inte
 **Goal:** Determine the stack arrangement of multiple local variables and understand the implications for buffer overflow attacks.
 
 **GDB Evidence:**
-We printed the addresses of both buffers in GDB to determine their exact placement on the stack:
+I printed the addresses of both buffers in GDB to determine their exact placement on the stack:
 
 ```text
-pwndbg> p &buffer_A
+pwndbg> p &buffer_a
 $1 = (char (*)[16]) 0x7fffffffdc60
-pwndbg> p &buffer_B
+pwndbg> p &buffer_b
 $2 = (char (*)[32]) 0x7fffffffdc40
 ```
 
 **Analysis & Conclusions:**
-1. **Stack Order:** Based on the GDB output, the variable declared second (`buffer_B` at `0x7fffffffdc40`) resides at a **lower memory address** than the variable declared first (`buffer_A` at `0x7fffffffdc60`). The exact distance between them is `0x20` (32 bytes).
-2. **Exploitation Vector:** Because strings and inputs are written from lower to higher addresses, an overflow originating in `buffer_B` will write upwards and directly overwrite the contents of `buffer_A`. An attacker could exploit this layout to manipulate adjacent local variables before ever reaching the Return Address.
+1. **Stack Order:** Based on the GDB output, the variable declared second (`buffer_b` at `0x7fffffffdc40`) resides at a **lower memory address** than the variable declared first (`buffer_a` at `0x7fffffffdc60`). The exact distance between them is `0x20` (32 bytes).
+2. **Exploitation Vector:** Because strings and inputs are written from lower to higher addresses, an overflow originating in `buffer_b` will write upwards and directly overwrite the contents of `buffer_a`. I could exploit this layout to manipulate adjacent local variables before ever reaching the Return Address.
 
 ---
 
@@ -95,7 +95,7 @@ $2 = (char (*)[32]) 0x7fffffffdc40
 **Goal:** Observe the behavior of `fgets` when provided with input exceeding the buffer size, and understand how it handles leftover input.
 
 **Evidence (Consecutive Reads Experiment):**
-To test what happens to the characters that exceed the 32-byte limit, we added a second `fgets` call immediately after the first one:
+To test what happens to the characters that exceed the 32-byte limit, I added a second `fgets` call immediately after the first one:
 
 ```c
 char name[32];
@@ -116,7 +116,7 @@ Extra: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
 **Analysis:**
 1. **Why it didn't crash:** `fgets` safely limits the read operation to the specified boundary (`sizeof(name)` = 32). It reads exactly 31 characters and appends a null-terminator (`\0`). The Stack Frame remains completely untouched.
-2. **Leftover `stdin` data:** `fgets` does *not* throw away or ignore the unread characters. The remaining characters from the line stay in the `stdin` buffer. As proven by the experiment, a subsequent call to `fgets` immediately consumes this leftover input without waiting for the user to type anything new. This is critical because uncleaned leftover input can cause unexpected behavior or vulnerabilities in programs that read multiple times.
+2. **Leftover `stdin` data:** `fgets` does *not* throw away or ignore the unread characters. The remaining characters from the line stay in the `stdin` buffer. As proven by my experiment, a subsequent call to `fgets` immediately consumes this leftover input without waiting for me to type anything new. This is critical because uncleaned leftover input can cause unexpected behavior or vulnerabilities in programs that read multiple times.
 3. **Why `fgets` is safer than `gets`:** The deprecated `gets()` function lacks boundary checking. If `gets` were used, it would have blindly written all 60 bytes into memory, overwriting the Saved RBP and the Return Address, resulting in a direct `Segmentation Fault`.
 
 ---
@@ -137,4 +137,4 @@ Segmentation fault         (core dumped) ./mem
 ```
 
 **Conclusion:** 
-As predicted, feeding a large number of 'A' characters into the unconstrained `gets()` function allowed the input to overflow the 32-byte buffer. Because strings are written towards higher memory addresses, the input traversed upwards, blindly overwriting the adjacent local variables, the Saved RBP, and finally the Return Address. When `greet()` attempted to return to `main`, it jumped to an invalid memory address (0x4141414141414141), resulting in a classic `Segmentation fault`.
+As predicted, feeding a large number of 'A' characters into the unconstrained `gets()` function allowed my input to overflow the 32-byte buffer. Because strings are written towards higher memory addresses, the input traversed upwards, blindly overwriting the adjacent local variables, the Saved RBP, and finally the Return Address. When `greet()` attempted to return to `main`, it jumped to an invalid memory address (0x4141414141414141), resulting in a classic `Segmentation fault`.
