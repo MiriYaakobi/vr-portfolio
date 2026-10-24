@@ -89,3 +89,18 @@ To verify the character-by-character XOR comparison, I debugged the binary using
 
 **Final Conclusion:** 
 The dynamic analysis confirms that the binary obfuscates the password in memory and compares it character-by-character after applying an XOR operation with the key `0x42`. The correct password is `"entrypt"`, which produces the flag: `entrypoint{xor_is_awesome}`.
+
+---
+
+## Exercise 3: Inspecting Calling Conventions with GDB
+
+To demonstrate the x86-64 System V AMD64 calling convention, I analyzed the arguments passed to the `scanf` function dynamically.
+
+**Steps and Analysis:**
+1. I set a breakpoint exactly on the `call __isoc23_scanf@plt` instruction in `crackme2`.
+2. Upon hitting the breakpoint, I inspected the relevant registers based on the calling convention, which dictates that the first argument is passed in `RDI` and the second in `RSI`.
+3. **Register `RDI` (First Argument):** Running `x/s $rdi` returned `"%63s"`. This represents the format specifier string passed to `scanf`.
+4. **Register `RSI` (Second Argument):** Running `print/x $rsi` returned the memory address `0x7fffffffdc10`. This is the pointer to the local buffer (`input[64]`) on the stack where `scanf` will store the user's string.
+
+**Conclusion:**
+The dynamic inspection perfectly aligns with the standard 64-bit Linux calling convention. Understanding this structure allows reverse engineers to identify function inputs directly from registers without needing the source code.
