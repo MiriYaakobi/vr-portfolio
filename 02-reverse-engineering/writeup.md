@@ -75,3 +75,17 @@ After compiling the modified `crackme2` binary with `-O0 -no-pie` and stripping 
 *   **Logic:** The code verifies the input length is exactly 7. It then enters a `for` loop, applying an XOR operation (`^ 0x42`) to each character of the user input and comparing it to the corresponding obfuscated byte.
 
 **Conclusion:** The password is statically obfuscated using a single-byte XOR key (`0x42`). Since XOR is symmetric, reversing the operation on the hexadecimal values (e.g., `0x27 ^ 0x42 = 0x65` -> 'e') reveals the plaintext password: `"entrypt"`.
+
+### 2. Dynamic Analysis (GDB)
+To verify the character-by-character XOR comparison, I debugged the binary using GDB. Since there is no `strcmp` call, I had to inspect the loop directly.
+
+**Steps and Findings:**
+1. Located the `cmp` instruction inside the `for` loop that compares the user's input with the obfuscated byte (found via Ghidra's assembly view).
+2. Set a breakpoint on this exact instruction (e.g., `break *0x40125b`).
+3. Ran the program and inputted exactly 7 characters (`AAAAAAA`) to pass the initial length check.
+4. When the breakpoint was hit, I inspected the registers involved in the comparison (`cmp edx, eax`):
+   * `EAX` contained `0x27` (the first byte of the hardcoded secret array).
+   * `EDX` contained `0x03`. This perfectly reflects the program's logic: the ASCII value of 'A' is `0x41`, and `0x41 ^ 0x42 = 0x03`. 
+
+**Final Conclusion:** 
+The dynamic analysis confirms that the binary obfuscates the password in memory and compares it character-by-character after applying an XOR operation with the key `0x42`. The correct password is `"entrypt"`, which produces the flag: `entrypoint{xor_is_awesome}`.
