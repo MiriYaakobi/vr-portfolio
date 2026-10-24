@@ -60,3 +60,18 @@ To confirm the extracted password is fully operational, I ran the binary in the 
     Correct. Flag: entrypoint{re_basics}
 
 The application accepted the password, verifying the accuracy of both the static and dynamic analysis phases.
+
+---
+
+## Exercise 2: Circumventing XOR Obfuscation
+
+### 1. Static Analysis in Ghidra
+After compiling the modified `crackme2` binary with `-O0 -no-pie` and stripping it, I imported it into Ghidra. The goal was to understand how the new logic hides the password without using `strcmp`.
+
+**Decompiler Findings (`FUN_004011b6`):**
+*   **Missing Strings:** Running the `strings` command on the binary no longer reveals the password.
+*   **Memory Layout:** Ghidra merged the user input buffer and the secret array into a single 79-byte local variable (`local_5f`). 
+*   **Obfuscated Secret:** Instead of a plaintext string, the program loads 7 individual hexadecimal bytes (`0x27, 0x2c, 0x36, 0x30, 0x3b, 0x32, 0x36`) into the beginning of the buffer.
+*   **Logic:** The code verifies the input length is exactly 7. It then enters a `for` loop, applying an XOR operation (`^ 0x42`) to each character of the user input and comparing it to the corresponding obfuscated byte.
+
+**Conclusion:** The password is statically obfuscated using a single-byte XOR key (`0x42`). Since XOR is symmetric, reversing the operation on the hexadecimal values (e.g., `0x27 ^ 0x42 = 0x65` -> 'e') reveals the plaintext password: `"entrypt"`.
