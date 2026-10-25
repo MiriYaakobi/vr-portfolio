@@ -2,3 +2,7 @@
 core
 *.o
 flag*.txt
+
+# Exclude dynamically generated and downloaded challenge binaries
+02-reverse-engineering/crackme2
+02-reverse-engineering/picogym/gdb-baby-step-2/debugger0_b
