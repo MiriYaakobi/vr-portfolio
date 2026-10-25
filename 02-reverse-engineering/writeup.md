@@ -104,3 +104,15 @@ To demonstrate the x86-64 System V AMD64 calling convention, I analyzed the argu
 
 **Conclusion:**
 The dynamic inspection perfectly aligns with the standard 64-bit Linux calling convention. Understanding this structure allows reverse engineers to identify function inputs directly from registers without needing the source code.
+
+---
+
+## Exercise 4: picoGym Reverse Engineering Challenges
+
+### Challenge 1: Bit-O-Asm-1
+* **Category:** Reverse Engineering (Static Analysis)
+* **Objective:** Determine the final value of the `eax` register from a static assembly dump.
+* **Pattern & Methodology:**
+  The provided assembly code represents a standard function execution. After the stack frame prologue, the instruction at offset `<+15>` is `mov eax,0x30`. This command directly assigns the literal hexadecimal value `0x30` into the `eax` register, serving as the return value of the function.
+* **Solution:** Converting the hexadecimal `0x30` to decimal yields 48. Wrapping this value in the required flag format provides the solution.
+* **Flag:** `academy{48}`
