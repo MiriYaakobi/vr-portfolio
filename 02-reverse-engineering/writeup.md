@@ -145,3 +145,20 @@ The dynamic inspection perfectly aligns with the standard 64-bit Linux calling c
       rax            0x4af4b             307019
 * **Solution:** The decimal value held in `rax`/`eax` at the end of execution is 307019.
 * **Flag:** `academy{307019}`
+
+### Challenge 4: keygenme-py
+* **Category:** Reverse Engineering (Algorithmic Analysis)
+* **Objective:** Reverse engineer the license key validation algorithm within a Python script to generate a valid product key.
+* **Pattern & Methodology:**
+  Through static analysis of the source code, I isolated the `check_key` function. I discovered that the valid license key is constructed from two main parts:
+  1. **Static Part:** The key must begin with a hardcoded string: `academy{1n_7h3_kk3y_of_`.
+  2. **Dynamic Part:** The script does not decrypt the input. Instead, it hashes the provided username (`MILLER`) using the one-way SHA256 algorithm. It then verifies the user's input against specific indices (4, 5, 3, 6, 2, 7, 1, 8) of the resulting hexadecimal hash string.
+  
+  To bypass this, I manually generated the SHA256 hash of "MILLER" in an interactive Python shell, which produced `734d9ef4ba0977dafd63c59bd4ceb0413f7559edf6347c8405f8feabdecb01d0`. By extracting the characters at the exact indices required by the script, I obtained the string `9edf443b`. Concatenating the static base, the dynamic string, and a closing brace created the valid license key.
+* **Execution Evidence (Terminal Output):**
+      What would you like to do, MILLER (a/b/c/d)? c
+      Enter your license key: academy{1n_7h3_kk3y_of_9edf443b}
+      Full version written to 'keygenme.py'.
+      Exiting trial version...
+* **Solution:** The dynamic key portion extracted from the hash is `9edf443b`.
+* **Flag:** `academy{1n_7h3_kk3y_of_9edf443b}`
