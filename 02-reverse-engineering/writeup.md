@@ -66,13 +66,20 @@ The application accepted the password, verifying the accuracy of both the static
 ## Exercise 2: Circumventing XOR Obfuscation
 
 ### 1. Static Analysis in Ghidra
-After compiling the modified `crackme2` binary with `-O0 -no-pie` and stripping it, I imported it into Ghidra. The goal was to understand how the new logic hides the password without using `strcmp`.
 
-**Decompiler Findings (`FUN_004011b6`):**
-*   **Missing Strings:** Running the `strings` command on the binary no longer reveals the password.
-*   **Memory Layout:** Ghidra merged the user input buffer and the secret array into a single 79-byte local variable (`local_5f`). 
-*   **Obfuscated Secret:** Instead of a plaintext string, the program loads 7 individual hexadecimal bytes (`0x27, 0x2c, 0x36, 0x30, 0x3b, 0x32, 0x36`) into the beginning of the buffer.
-*   **Logic:** The code verifies the input length is exactly 7. It then enters a `for` loop, applying an XOR operation (`^ 0x42`) to each character of the user input and comparing it to the corresponding obfuscated byte.
+**Compilation & Security Posture:**
+To ensure reproducible memory addresses during analysis, I compiled the binary without Position Independent Executable (PIE) and stripped the symbols:
+`gcc -O0 -no-pie crackme2.c -o crackme2 && strip crackme2`
+
+Running `checksec crackme2` confirms the active mitigations:
+```text
+Arch:     amd64-64-little
+RELRO:    Partial RELRO
+Stack:    No canary found
+NX:       NX enabled
+PIE:      No PIE (0x400000)
+```
+After compilation, I imported the stripped binary into Ghidra. The goal was to understand how the new logic hides the password without using `strcmp`.
 
 **Conclusion:** The password is statically obfuscated using a single-byte XOR key (`0x42`). Since XOR is symmetric, reversing the operation on the hexadecimal values (e.g., `0x27 ^ 0x42 = 0x65` -> 'e') reveals the plaintext password: `"entrypt"`.
 
@@ -165,5 +172,6 @@ The dynamic inspection perfectly aligns with the standard 64-bit Linux calling c
       Enter your license key: academy{1n_7h3_kk3y_of_9edf443b}
       Full version written to 'keygenme.py'.
       Exiting trial version...
+* **Attack Surface Analysis (`exec`):** The final stage of the script utilizes `exec(full_version_code)` to execute the decrypted payload. This is a critical security risk. If the decrypted string were sourced from or influenced by untrusted user input, it would result in arbitrary Remote Code Execution (RCE). In this context, the payload is hardcoded, but utilizing `exec()` on dynamic data is an anti-pattern.
 * **Solution:** The dynamic key portion extracted from the hash is `9edf443b`.
 * **Flag:** `academy{1n_7h3_kk3y_of_9edf443b}`
