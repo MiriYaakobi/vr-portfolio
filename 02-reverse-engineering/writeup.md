@@ -87,8 +87,13 @@ To verify the character-by-character XOR comparison, I debugged the binary using
    * `EAX` contained `0x27` (the first byte of the hardcoded secret array).
    * `EDX` contained `0x03`. This perfectly reflects the program's logic: the ASCII value of 'A' is `0x41`, and `0x41 ^ 0x42 = 0x03`. 
 
-**Final Conclusion:** 
+**Final Conclusion & Automated Verification:** 
 The dynamic analysis confirms that the binary obfuscates the password in memory and compares it character-by-character after applying an XOR operation with the key `0x42`. The correct password is `"entrypt"`, which produces the flag: `entrypoint{xor_is_awesome}`.
+
+To ensure the integrity of the validation logic and prevent future regressions, I implemented an automated test script (`test_crackme2.sh`). The script acts as a behavioral contract, continuously verifying three distinct execution paths:
+* **Valid input (`entrypt`):** Triggers the success message and outputs the flag.
+* **Invalid input, correct length (`AAAAAAA`):** Bypasses the length check but is correctly rejected during the XOR loop (Outputs: `Wrong.`).
+* **Invalid length (`short`):** Correctly rejected immediately by the initial length check prior to entering the validation loop (Outputs: `Wrong.`).
 
 ---
 
