@@ -5,7 +5,7 @@ This repository tracks my progress through the Cyber Security Researcher track, 
 ## Features (Work In Progress)
 - [x] **Lab Setup:** Reproducible research environment configuration.
 - [x] **Memory Analysis:** Stack frame mapping, stack alignment, and basic buffer overflow mechanics.
-- [x] **Reverse Engineering:** Static analysis (Ghidra), dynamic analysis (GDB), and algorithmic reversing (Python).
+- [x] **Reverse Engineering:** Static and dynamic analysis of stripped ELF binaries, XOR-obfuscated validation, System V AMD64 calling convention, and picoGym writeups.
 - [ ] **Binary Exploitation:** (Under construction)
 - [ ] **CVE Analysis & Web Security:** (Under construction)
 
@@ -38,7 +38,7 @@ make clean
 ```text
 00-lab-setup/                   # Reproducible lab environment setup
 01-foundations/                 # Stack memory layout, GDB static/dynamic analysis, and overflow concepts
-02-reverse-engineering/         # Static/Dynamic analysis, crackmes, XOR obfuscation, and picoGym challenges
+02-reverse-engineering/         # Ghidra, GDB/pwndbg, and picoGym evidence; see 02-reverse-engineering/writeup.md
 03-binexp-control-flow/         # (Pending)
 04-binexp-defeating-mitigations/# (Pending)
 05-ctf/                         # (Pending)
