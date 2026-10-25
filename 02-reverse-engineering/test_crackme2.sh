@@ -6,31 +6,32 @@ strip crackme2
 
 echo "=== Running crackme2 Automated Tests ==="
 
-# Test 1: Valid input (expected to succeed)
-echo -n "[*] Test 1: Valid input ('entrypt') -> "
-OUTPUT1=$(echo "entrypt" | ./crackme2)
-if [[ "$OUTPUT1" == *"Correct"* ]]; then
-    echo "PASS"
-else
-    echo "FAIL"
-fi
+failures=0
 
-# Test 2: Valid length but invalid key (expected to fail)
-echo -n "[*] Test 2: Invalid input, correct length ('AAAAAAA') -> "
-OUTPUT2=$(echo "AAAAAAA" | ./crackme2)
-if [[ "$OUTPUT2" == *"Wrong"* ]]; then
-    echo "PASS"
-else
-    echo "FAIL"
-fi
+run_test() {
+    local description="$1"
+    local input="$2"
+    local expected="$3"
+    local output
 
-# Test 3: Input too short (expected to fail)
-echo -n "[*] Test 3: Short input ('short') -> "
-OUTPUT3=$(echo "short" | ./crackme2)
-if [[ "$OUTPUT3" == *"Wrong"* ]]; then
-    echo "PASS"
-else
-    echo "FAIL"
-fi
+    echo -n "[*] $description -> "
+    output=$(printf '%s\n' "$input" | ./crackme2)
+    
+    if [[ "$output" == *"$expected"* ]]; then
+        echo "PASS"
+    else
+        echo "FAIL"
+        failures=$((failures + 1))
+    fi
+}
+
+run_test "Valid input ('entrypt')" "entrypt" "Correct"
+run_test "Invalid input, correct length ('AAAAAAA')" "AAAAAAA" "Wrong"
+run_test "Short input ('short')" "short" "Wrong"
 
 echo "========================================"
+
+if (( failures > 0 )); then
+    exit 1
+fi
+exit 0
