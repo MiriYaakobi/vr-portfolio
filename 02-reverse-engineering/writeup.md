@@ -129,3 +129,19 @@ The dynamic inspection perfectly aligns with the standard 64-bit Linux calling c
   5. An unconditional `jmp` bypasses the `add` instruction and moves the final calculated variable into `eax`.
 * **Solution:** 654874 - 101 = 654773.
 * **Flag:** `academy{654773}`
+
+### Challenge 3: gdb baby step 2
+* **Category:** Reverse Engineering (Dynamic Analysis)
+* **Objective:** Extract the final value of the `eax` register at the end of the `main` function using GDB on an ELF executable.
+* **Pattern & Methodology:**
+  Instead of tracing a loop manually (static analysis), dynamic analysis was used to let the CPU perform the execution and halt right before the function exits.
+  1. Loaded the binary into GDB and used `disassemble main` to map the function.
+  2. Identified the function epilogue and set a breakpoint right before the `ret` instruction (`break *0x401142`).
+  3. Executed the program (`run`) until it hit the breakpoint.
+  4. Inspected the CPU state using `info registers`. Since the architecture is 64-bit, the target `eax` (32-bit) value is safely contained within the lower half of `rax`.
+* **Execution Evidence (GDB Output):**
+      Breakpoint 1, 0x0000000000401142 in main ()
+      (gdb) info registers
+      rax            0x4af4b             307019
+* **Solution:** The decimal value held in `rax`/`eax` at the end of execution is 307019.
+* **Flag:** `academy{307019}`
