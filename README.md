@@ -5,7 +5,7 @@ This repository tracks my progress through the Cyber Security Researcher track, 
 ## Features (Work In Progress)
 - [x] **Lab Setup:** Reproducible research environment configuration.
 - [x] **Memory Analysis:** Stack frame mapping, stack alignment, and basic buffer overflow mechanics.
-- [ ] **Reverse Engineering:** (Under construction)
+- [x] **Reverse Engineering:** Static analysis (Ghidra), dynamic analysis (GDB), and algorithmic reversing (Python).
 - [ ] **Binary Exploitation:** (Under construction)
 - [ ] **CVE Analysis & Web Security:** (Under construction)
 
@@ -38,7 +38,7 @@ make clean
 ```text
 00-lab-setup/                   # Reproducible lab environment setup
 01-foundations/                 # Stack memory layout, GDB static/dynamic analysis, and overflow concepts
-02-reverse-engineering/         # (Pending)
+02-reverse-engineering/         # Static/Dynamic analysis, crackmes, XOR obfuscation, and picoGym challenges
 03-binexp-control-flow/         # (Pending)
 04-binexp-defeating-mitigations/# (Pending)
 05-ctf/                         # (Pending)
@@ -48,4 +48,5 @@ make clean
 ```
 
 ## What I Learned
-* **Module 01 (Foundations):** Mastered x86-64 stack frame layout, compiler stack alignment, and static/dynamic memory analysis using GDB/pwndbg. Practically demonstrated buffer overflow vulnerabilities by exploiting unconstrained input bounds.
+- **Module 01 (Foundations):** Mastered x86-64 stack frame layout, compiler stack alignment, and static/dynamic memory analysis using GDB/pwndbg. Practically demonstrated buffer overflow vulnerabilities by exploiting unconstrained input bounds.
+- **Module 02 (Reverse Engineering):** Reverse-engineered stripped ELF binaries and Python scripts. Bypassed XOR obfuscation, analyzed System V AMD64 calling conventions, and extracted secrets using static (Ghidra) and dynamic (GDB) analysis.
