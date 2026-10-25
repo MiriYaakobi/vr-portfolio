@@ -116,3 +116,16 @@ The dynamic inspection perfectly aligns with the standard 64-bit Linux calling c
   The provided assembly code represents a standard function execution. After the stack frame prologue, the instruction at offset `<+15>` is `mov eax,0x30`. This command directly assigns the literal hexadecimal value `0x30` into the `eax` register, serving as the return value of the function.
 * **Solution:** Converting the hexadecimal `0x30` to decimal yields 48. Wrapping this value in the required flag format provides the solution.
 * **Flag:** `academy{48}`
+
+### Challenge 2: Bit-O-Asm-4
+* **Category:** Reverse Engineering (Static Analysis)
+* **Objective:** Trace execution flow with conditional jumps and arithmetic operations to find the value of `eax`.
+* **Pattern & Methodology:**
+  The assembly code implements an `if-else` conditional structure. 
+  1. A local variable `[rbp-0x4]` is initialized with `0x9fe1a` (654874 in decimal).
+  2. The `cmp` instruction compares this variable against `0x2710` (10000).
+  3. The `jle` (Jump if Less or Equal) condition evaluates to false, so the execution falls through to the subtraction branch.
+  4. The `sub` instruction subtracts `0x65` (101) from the local variable.
+  5. An unconditional `jmp` bypasses the `add` instruction and moves the final calculated variable into `eax`.
+* **Solution:** 654874 - 101 = 654773.
+* **Flag:** `academy{654773}`
