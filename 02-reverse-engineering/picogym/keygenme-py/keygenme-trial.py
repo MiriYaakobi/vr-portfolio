@@ -4,6 +4,7 @@
 
 import hashlib
 import base64
+import sys
 from importlib import import_module
 
 try:
