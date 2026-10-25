@@ -3,8 +3,13 @@
 #============================================================================#
 
 import hashlib
-from cryptography.fernet import Fernet
 import base64
+from importlib import import_module
+
+try:
+    Fernet = import_module("cryptography.fernet").Fernet
+except ImportError:
+    Fernet = None
 
 
 
@@ -198,6 +203,10 @@ def check_key(key, username_trial):
 
 
 def decrypt_full_version(key_str):
+
+    if Fernet is None:
+        print("\nThe 'cryptography' package is required to decrypt the full version.\n")
+        return
 
     key_base64 = base64.b64encode(key_str.encode())
     f = Fernet(key_base64)
