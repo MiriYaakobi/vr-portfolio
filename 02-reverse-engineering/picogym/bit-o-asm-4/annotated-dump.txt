@@ -1,0 +1,14 @@
+<+0>:     endbr64                           // Security mechanism: Valid entry point for the function
+<+4>:     push   rbp                        // Backup RBP to restore it at the end of the function
+<+5>:     mov    rbp,rsp                    // Set RBP to current stack pointer (prologue complete)
+<+8>:     mov    DWORD PTR [rbp-0x14],edi   // Store 1st argument (from EDI) on the stack
+<+11>:    mov    QWORD PTR [rbp-0x20],rsi   // Store 2nd argument (from RSI) on the stack
+<+15>:    mov    DWORD PTR [rbp-0x4],0x9fe1a // Initialize local variable 'val' with 0x9fe1a (654874)
+<+22>:    cmp    DWORD PTR [rbp-0x4],0x2710 // Compare 'val' against 0x2710 (10000)
+<+29>:    jle    0x55555555514e <main+37>   // Jump to <main+37> if 'val' <= 10000
+<+31>:    sub    DWORD PTR [rbp-0x4],0x65   // If false: Subtract 0x65 (101) from 'val'
+<+35>:    jmp    0x555555555152 <main+41>   // Unconditional jump to <main+41> (skip the 'add' branch)
+<+37>:    add    DWORD PTR [rbp-0x4],0x65   // If true (jump target): Add 0x65 (101) to 'val'
+<+41>:    mov    eax,DWORD PTR [rbp-0x4]    // Move the calculated 'val' into EAX (return value)
+<+44>:    pop    rbp                        // Restore original RBP (epilogue)
+<+45>:    ret                               // Return to the caller
