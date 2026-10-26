@@ -43,7 +43,7 @@ To verify the findings from the static analysis, I performed a dynamic analysis 
 2. I ran the program until it stopped at this precise entry point, ensuring system libraries were already loaded.
 3. To view the assembly code without symbols, I used `x/40i $rip` to print the next 40 instructions directly from the instruction pointer.
 4. I located the specific `call strcmp@plt` instruction in the output and noted its exact memory address (`0x401228`).
-5. I set a precise hardware breakpoint on that address (`break *0x401228`), continued execution, and entered a test password (`miri123`).
+5. I set a software breakpoint on that address (`break *0x401228`), continued execution, and entered a test password (`miri123`).
 6. The program stopped exactly at the comparison. Following the System V AMD64 ABI calling convention, I inspected the registers:
    * `x/s $rdi` revealed the user input: `"miri123"`
    * `x/s $rsi` revealed the hardcoded secret: `"entrypt"`
@@ -70,6 +70,9 @@ The application accepted the password, verifying the accuracy of both the static
 **Compilation & Security Posture:**
 To ensure reproducible memory addresses during analysis, I compiled the binary without Position Independent Executable (PIE) and stripped the symbols:
 `gcc -O0 -no-pie crackme2.c -o crackme2 && strip crackme2`
+
+To verify reproducibility, the SHA-256 hash of the exact binary analyzed is:
+`2d5709df2eb75b895ceee4593ba6ee37eb005c4b40987573be3bb892340f1771`
 
 Running `checksec crackme2` confirms the active mitigations:
 ```text
