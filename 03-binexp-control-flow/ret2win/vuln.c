@@ -8,7 +8,7 @@ void win(void) {
 }
 
 void vulnerable(void) {
-    char buffer[64];
+    char buffer[128];
     puts("Enter data:");
     read(0, buffer, 256);
     puts("Done.");
