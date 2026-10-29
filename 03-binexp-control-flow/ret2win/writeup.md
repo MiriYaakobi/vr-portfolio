@@ -80,3 +80,25 @@ No other changes to the ROP chain or payload structure were necessary. Running t
     Access granted. Flag: entrypoint{ret2win_success}
     $ whoami
     miri
+
+---
+
+## Exercise 3: Enabling the Stack Canary
+
+### Objective
+To observe and document the effects of modern exploit mitigations, specifically the Stack Canary, on a standard buffer overflow attack.
+
+### Recompilation and Execution
+I recompiled `vuln.c` without the `-fno-stack-protector` flag, effectively enabling the compiler's default stack protection. I then ran the exact same exploit payload.
+
+This time, the exploit failed to hijack the control flow. Instead of a standard Segmentation Fault (`SIGSEGV`) occurring at the `ret` instruction, the program crashed immediately with the following output:
+
+    *** stack smashing detected ***: terminated
+    Program received signal SIGABRT, Aborted.
+
+### Vulnerability Mitigation Analysis
+The failure of the exploit is due to the Stack Canary mechanism. When the protection is enabled, the compiler alters the stack frame layout. It inserts a random 8-byte value (the Canary) directly between the local `buffer` and the Saved RBP. 
+
+Because a buffer overflow writes data sequentially, my payload inevitably overwrote this Canary value while attempting to reach the Return Address. Before the `vulnerable()` function could execute its `ret` instruction, a validation check was performed. The program compared the current Canary value on the stack against its original saved value. 
+
+Recognizing that the Canary had been modified ("smashed"), the program intentionally triggered a `SIGABRT` via the `abort()` function to safely terminate the process before the attacker could gain control of the execution pointer (`RIP`). This proves that a classic sequential buffer overflow cannot blindly bypass an active Stack Canary without first leaking its random value.
