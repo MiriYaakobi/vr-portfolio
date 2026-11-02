@@ -102,3 +102,45 @@ The failure of the exploit is due to the Stack Canary mechanism. When the protec
 Because a buffer overflow writes data sequentially, my payload inevitably overwrote this Canary value while attempting to reach the Return Address. Before the `vulnerable()` function could execute its `ret` instruction, a validation check was performed. The program compared the current Canary value on the stack against its original saved value. 
 
 Recognizing that the Canary had been modified ("smashed"), the program intentionally triggered a `SIGABRT` via the `abort()` function to safely terminate the process before the attacker could gain control of the execution pointer (`RIP`). This proves that a classic sequential buffer overflow cannot blindly bypass an active Stack Canary without first leaking its random value.
+
+---
+
+## Exercise 4: Advanced ROP - Passing Arguments
+
+### Objective
+To move beyond a basic `ret2win` exploit by calling a target function that requires a specific parameter. In the x86-64 System V ABI, arguments are passed via registers (specifically `RDI` for the first argument), not the stack. This requires building a Return-Oriented Programming (ROP) chain to pop a value into `RDI` before jumping to the target.
+
+### The Missing Gadget Challenge
+I updated `vuln.c` to include `win_args(int secret_code)`, a function that grants a shell only if the argument matches `0xdeadbeef`. 
+To pass this argument, my exploit script utilized `pwntools` to search for a `pop rdi; ret` gadget. However, the script crashed:
+
+    TypeError: 'NoneType' object is not subscriptable
+
+This occurred because modern Linux systems and GCC compilers have removed the historical `__libc_csu_init` function (which naturally contained this gadget sequence) for optimization and security reasons. Without an authentic `libc` leak (Ret2Libc), the required gadget simply did not exist in this small binary.
+
+### Lab Environment Adjustment
+To isolate and practice the exact mechanics of parameter passing without escalating to a full Ret2Libc attack, I intentionally added a "Gadget Farm" to the source code:
+
+    void gadget_farm(void) {
+        __asm__("pop %rdi; ret");
+    }
+
+I recompiled the binary using the `-fcf-protection=none` flag to disable modern Intel CET mitigations that were confusing the `pwntools` search engine.
+
+### Payload Construction & Execution
+With the gadget now present in the binary, I structured the ROP chain in `exploit_args.py` as follows:
+1. **Offset (136 bytes):** Overwrite the buffer and Saved RBP.
+2. **pop rdi gadget:** The CPU jumps here, popping the next stack value into `RDI`.
+3. **0xdeadbeef:** The argument consumed by the `pop rdi` instruction.
+4. **ret gadget:** Used to ensure 16-byte stack alignment.
+5. **win_args address:** The final destination.
+
+Running the exploit successfully loaded the password into the register and bypassed the condition:
+
+    [+] Starting local process './vuln': pid 4177
+    [*] Switching to interactive mode
+    
+    Done.
+    Access granted! Secret code is correct. Spawning shell...
+    $ whoami
+    miri
