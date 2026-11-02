@@ -7,6 +7,15 @@ void win(void) {
     system("/bin/sh");
 }
 
+void win_args(int secret_code) {
+    if (secret_code == 0xdeadbeef) {
+        puts("Access granted! Secret code is correct. Spawning shell...");
+        system("/bin/sh");
+    } else {
+        puts("Access denied. Incorrect secret code.");
+    }
+}
+
 void vulnerable(void) {
     char buffer[128];
     puts("Enter data:");
