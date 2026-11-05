@@ -51,9 +51,9 @@ I edited `vuln.c` and increased the buffer size from 64 bytes to 128 bytes:
 
 After pushing the changes, pulling them to my Linux environment, and recompiling the binary, the previous exploit naturally failed. The offset to the Return Address had changed. 
 Based on the memory layout of the stack, I calculated the new offset mathematically:
-* **128 bytes** to fill the new buffer.
-* **8 bytes** to overwrite the Saved RBP.
-* Total offset: 128 + 8 = **136 bytes**.
+- **128 bytes** to fill the new buffer.
+- **8 bytes** to overwrite the Saved RBP.
+- Total offset: 128 + 8 = **136 bytes**.
 
 ### Exploit Update and Execution
 I updated the `exploit.py` script, changing the offset variable to match my calculation:
