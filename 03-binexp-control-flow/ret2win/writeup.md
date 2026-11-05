@@ -144,3 +144,32 @@ Running the exploit successfully loaded the password into the register and bypas
     Access granted! Secret code is correct. Spawning shell...
     $ whoami
     miri
+
+---
+
+## Exercise 5: Format String vs. Stack Overflow (picoGym)
+
+### Conceptual Difference
+Throughout exercises 1-4, I exploited **Stack Overflow** vulnerabilities, which involve physically exceeding a buffer's allocated space to overwrite adjacent memory (like the Return Address). 
+In contrast, a **Format String** vulnerability is a logical flaw. It occurs when user input is passed directly to a formatting function (e.g., `printf(choice)`) without a format specifier. By injecting format parameters like `%x` or `%s`, I can force the function to read from or write to arbitrary memory locations without overflowing the buffer.
+
+### Challenge Logic & Exploitation
+This picoGym challenge consisted of a two-stage menu system where a secret flag is printed only if the program encounters a memory crash (`SIGSEGV`). To reach the flag, I had to bypass specific checks using the menu options provided:
+
+1. **Stage 1 (Patrick) - Bypassing Length Check:** 
+   The first function required `printf` to output more than 64 characters to proceed. I selected the `Gr%114d_Cheese` burger from the menu. The `%114d` specifier forced `printf` to pad a random stack integer with 114 spaces, effortlessly bypassing the length condition.
+2. **Stage 2 (Bob) - Triggering the Segmentation Fault:** 
+   The second function required a crash to trigger the flag handler. I selected `Cla%sic_Che%s%steak`. The `%s` specifier instructed `printf` to treat a random stack value as a memory pointer and attempt to read a string from it. Since the address was invalid, it would cause an illegal memory access.
+
+### Local Testing vs. Remote Execution
+During local testing on my modern WSL environment, the `%s` injection gracefully printed `(null)` instead of crashing, due to updated system handling of null pointers in `printf`. 
+However, successful exploitation often depends on the target's specific environment. When connecting to the remote picoCTF instance, the stack contained different garbage values. The `%s` specifier successfully attempted to read an invalid memory address, triggering the intended `SIGSEGV` crash.
+
+### Execution & Flag
+I connected to the remote CTF server:
+
+    nc xebec.cylabacademy.net 20067
+
+After providing the two crafted inputs, the server's memory access failed, the signal handler was triggered, and the flag was successfully captured:
+
+    academy{7h3_cu570m3r_15_n3v3r_SEGFAULT_0fa8dcc5}
