@@ -6,3 +6,6 @@ flag*.txt
 # Exclude dynamically generated and downloaded challenge binaries
 02-reverse-engineering/crackme2
 02-reverse-engineering/picogym/gdb-baby-step-2/debugger0_b
+
+# 03-binexp-control-flow: Downloaded challenge binaries
+03-binexp-control-flow/ret2win/format-string-0/format-string-0
