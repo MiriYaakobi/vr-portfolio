@@ -5,10 +5,12 @@
 ### Security Posture & Vulnerability Analysis
 I began by analyzing the binary's protections using `checksec`. The results showed that the Stack Canary and PIE were disabled (`No canary found`, `No PIE (0x400000)`), making it an ideal candidate for a classic buffer overflow and a ret2win attack.
 
-Reviewing the source code in `vuln.c`, I identified the vulnerability in the `vulnerable()` function. It allocates a 64-byte `buffer` on the stack, but uses `read(0, buffer, 256)` to accept up to 256 bytes of standard input. Since stack protections are disabled, writing past the 64-byte limit allows for a direct overwrite of the saved Return Address.
+Reviewing the original source code in `vuln.c`, I identified the vulnerability in the `vulnerable()` function. It allocated a 64-byte `buffer` on the stack, but used `read(0, buffer, 256)` to accept up to 256 bytes of standard input. Since stack protections are disabled, writing past the 64-byte limit allows for a direct overwrite of the saved Return Address.
+
+**Note on Binary Versioning:** The evidence in this section (Exercise 1) was collected from the original 64-byte-buffer build, where the return-address offset was 72. Exercise 2 documents the current 128-byte-buffer build (currently residing in `vuln.c`) and its recalculated offset of 136.
 
 ### Finding the Offset
-Instead of guessing the distance to the Return Address, I used a cyclic pattern to find the exact offset dynamically. I generated a 200-byte pattern and fed it to the vulnerable program inside GDB.
+Instead of guessing the distance to the Return Address, I used a cyclic pattern to find the exact offset dynamically for the 64-byte build. I generated a 200-byte pattern and fed it to the vulnerable program inside GDB.
 
 The program crashed (SIGSEGV) when attempting to execute the `ret` instruction because it tried to return to an invalid address. By inspecting the registers at the time of the crash, I noticed that the Stack Pointer (`RSP`) contained a specific piece of my cyclic pattern:
 
@@ -28,7 +30,7 @@ While this successfully hijacked the control flow and printed the flag, the resu
 To fix this, I used a ROP technique: I found a simple `ret` gadget in the binary and added it to my payload right before the `win` address. This extra return instruction popped 8 bytes off the stack, perfectly aligning it for the `system("/bin/sh")` call.
 
 ### Exploit Execution
-Running the finalized exploit successfully provided an interactive shell:
+Running the finalized exploit against the 64-byte binary successfully provided an interactive shell:
 
     [+] Starting local process './vuln': pid 4115
     [*] Switching to interactive mode
@@ -43,13 +45,13 @@ Running the finalized exploit successfully provided an interactive shell:
 ## Exercise 2: Adapting to Source Code Changes
 
 ### Objective
-To demonstrate a fundamental understanding of stack mechanics, I modified the original source code to change the buffer size, recompiled the binary, and successfully adapted the exploit without relying on blind guessing.
+To demonstrate a fundamental understanding of stack mechanics, I modified the original source code to change the buffer size, recompiled the binary, and successfully adapted the exploit without relying on blind guessing. This represents the current state of `vuln.c` in the repository.
 
 ### Code Modification & Re-calculation
 I edited `vuln.c` and increased the buffer size from 64 bytes to 128 bytes:
 `char buffer[128];`
 
-After pushing the changes, pulling them to my Linux environment, and recompiling the binary, the previous exploit naturally failed. The offset to the Return Address had changed. 
+After pushing the changes, pulling them to my WSL environment, and recompiling the binary, the previous exploit naturally failed. The offset to the Return Address had changed. 
 Based on the memory layout of the stack, I calculated the new offset mathematically:
 - **128 bytes** to fill the new buffer.
 - **8 bytes** to overwrite the Saved RBP.
