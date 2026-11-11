@@ -21,7 +21,7 @@ Linux, C, Python 3, x86-64 Assembly, GDB (pwndbg), pwntools, Ghidra, Docker
 
 ### Installation
 ```bash
-git clone [https://github.com/MiriYaakobi/vr-portfolio.git](https://github.com/MiriYaakobi/vr-portfolio.git)
+git clone https://github.com/MiriYaakobi/vr-portfolio.git
 cd vr-portfolio
 bash setup.sh
 ```
@@ -33,7 +33,20 @@ make clean
 ```
 
 ## Running Exploits
-*(Under construction - will be updated as exploits are developed)*
+To test the basic buffer overflow and advanced ROP payloads (Module 03), use the automated integration test script which builds the binary with and without stack canaries:
+```bash
+cd 03-binexp-control-flow/ret2win
+chmod +x test_ret2win.sh
+./test_ret2win.sh
+```
+
+Alternatively, to run the exploits manually:
+```bash
+cd 03-binexp-control-flow/ret2win
+gcc -fno-stack-protector -no-pie vuln.c -o vuln
+python3 exploit.py
+python3 exploit_args.py
+```
 
 ## Project Structure
 ```text
