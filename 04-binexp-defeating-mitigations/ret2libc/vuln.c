@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+void gadget_farm(void) {
+    __asm__("pop %rdi; ret");
+}
+
 void vulnerable(void) {
     char buffer[64];
     puts("Enter data:");
