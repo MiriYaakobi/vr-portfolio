@@ -105,6 +105,21 @@ Because a buffer overflow writes data sequentially, my payload inevitably overwr
 
 Recognizing that the Canary had been modified ("smashed"), the program intentionally triggered a `SIGABRT` via the `abort()` function to safely terminate the process before the attacker could gain control of the execution pointer (`RIP`). This proves that a classic sequential buffer overflow cannot blindly bypass an active Stack Canary without first leaking its random value.
 
+### Mitigation Compilation & checksec Evidence
+To explicitly test the Stack Canary mitigation, I compiled the binary enabling the protector (which is also the default on modern compilers unless disabled):
+`gcc vuln.c -o vuln_canary`
+
+Running `checksec` on this specific build confirms the canary is actively enforcing:
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+
+### Note on Hardware Mitigations (SHSTK / IBT)
+In my `checksec` outputs throughout the exercises, `SHSTK` (Shadow Stack) and `IBT` (Indirect Branch Tracking) appeared as `Enabled`. These are Intel CET (Control-flow Enforcement Technology) hardware mitigations. 
+However, it is important to note that these are only *marked* as enabled by the compiler. For them to actually disrupt a ROP chain, both the physical CPU hardware and the OS kernel must actively enforce them. In my local WSL environment, CET is not actively enforced by the underlying hypervisor/hardware. Therefore, my ROP chains (using `pop rdi` and `ret`) executed successfully without triggering a CET hardware violation.
+
 ---
 
 ## Exercise 4: Advanced ROP - Passing Arguments
