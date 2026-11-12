@@ -49,3 +49,31 @@ Output:
 
 `whoami`
 Output: `miri`
+
+---
+
+## Exercise 2: The Necessity of an Information Leak
+
+### Why Hardcoding Fails Against ASLR
+Address Space Layout Randomization (ASLR) is a security mitigation that randomizes the memory locations of the stack, heap, and dynamic libraries (like `libc`) every time a program executes. If we try to hardcode the memory address of a target function like `system()` in our exploit, the attack will fail. When the payload attempts to jump to that hardcoded address, the library will not be there, resulting in a crash (Segmentation Fault).
+
+### How the Leak Defeats ASLR
+While ASLR randomizes the starting point (Base Address) of the `libc` library, it does not alter its internal structure. The distances (offsets) between functions inside the compiled library file remain absolutely constant. 
+
+By forcing the program to leak the real-time memory address of a known function that has already been resolved (like `puts`), we gain an anchor point. We calculate the library's actual base address by subtracting the known offset of `puts` from the leaked address. Once the dynamic base address is established, we can pinpoint the exact location of any other function (like `system()`) by adding its specific offset.
+
+### Memory Layout Diagram
+The following diagram illustrates how the internal offsets remain fixed even when the base address shifts unpredictably between runs:
+
+```text
+Run 1 (ASLR active)                           Run 2 (ASLR active)
+-------------------                           -------------------
+[ Random Base: 0x7f...1000 ]                  [ Random Base: 0x7f...9000 ]
+       |                                             |
+       | (Fixed Offset: +0x500)                      | (Fixed Offset: +0x500)
+       v                                             v
+[ puts() at 0x7f...1500  ] <LEAK              [ puts() at 0x7f...9500  ] <LEAK
+       |                                             |
+       | (Fixed Distance: +0x200)                    | (Fixed Distance: +0x200)
+       v                                             v
+[ system() at 0x7f...1700] <CALC              [ system() at 0x7f...9700] <CALC
