@@ -12,13 +12,19 @@ To perform a Code Reuse attack, I needed specific data from the local environmen
 
 **Target Library Identification:** 
 I used the `ldd` command to confirm exactly which `libc` version the binary loads. This is critical because offsets vary between versions.
-`ldd vuln`
-Output: `libc.so.6 => /usr/lib/x86_64-linux-gnu/libc.so.6`
+
+```bash
+ldd vuln
+# Output: libc.so.6 => /usr/lib/x86_64-linux-gnu/libc.so.6
+```
 
 **Finding the ROP Gadget:** 
 In 64-bit Linux, the first argument for a function must be placed in the `rdi` register. I used `ROPgadget` to find a clean instruction to pop values from the stack into `rdi`.
-`ROPgadget --binary vuln | grep "pop rdi"`
-Found at: `0x000000000040114a : pop rdi ; ret`
+
+```bash
+ROPgadget --binary vuln | grep "pop rdi"
+# Found at: 0x000000000040114a : pop rdi ; ret
+```
 
 ### The Exploit Strategy
 
@@ -28,7 +34,10 @@ To defeat ASLR, I must find the randomized address of `libc` at runtime. I used 
 This forces the program to print the actual memory address of `puts` during that specific run. After leaking the address, the payload jumps back to `main()`. This is a crucial step: it keeps the program alive so ASLR does not randomize the addresses again.
 
 By subtracting the static `puts` offset from the leaked address, the script dynamically calculates the current `libc` base address:
-`libc.address = leaked - libc.symbols["puts"]`
+
+```python
+libc.address = leaked - libc.symbols["puts"]
+```
 
 #### Stage 2: Spawning the Shell
 With the `libc` base address calculated, pwntools can accurately locate the `system()` function and the `"/bin/sh"` string. I sent a second payload to the restarted `main()` function:
@@ -42,25 +51,28 @@ With the `libc` base address calculated, pwntools can accurately locate the `sys
 ### Execution & Results
 Running the exploit successfully executed the two-stage payload, bypassed both NX and ASLR, and returned an interactive shell.
 
-`python3 exploit.py`
-Output:
-`[*] libc base: 0x7c37e4000000`
-`[*] Switching to interactive mode`
+```text
+Command: python3 exploit.py
 
-`whoami`
-Output: `miri`
+Output:
+[*] libc base: 0x7c37e4000000
+[*] Switching to interactive mode
+
+Command: whoami
+Output: miri
+```
 
 ---
 
 ## Exercise 2: The Necessity of an Information Leak
 
 ### Why Hardcoding Fails Against ASLR
-Address Space Layout Randomization (ASLR) is a security mitigation that randomizes the memory locations of the stack, heap, and dynamic libraries (like `libc`) every time a program executes. If we try to hardcode the memory address of a target function like `system()` in our exploit, the attack will fail. When the payload attempts to jump to that hardcoded address, the library will not be there, resulting in a crash (Segmentation Fault).
+Address Space Layout Randomization (ASLR) is a security mitigation that randomizes the memory locations of the stack, heap, and dynamic libraries (like `libc`) every time a program executes. If I try to hardcode the memory address of a target function like `system()` in my exploit, the attack will fail. When the payload attempts to jump to that hardcoded address, the library will not be there, resulting in a crash (Segmentation Fault).
 
 ### How the Leak Defeats ASLR
 While ASLR randomizes the starting point (Base Address) of the `libc` library, it does not alter its internal structure. The distances (offsets) between functions inside the compiled library file remain absolutely constant. 
 
-By forcing the program to leak the real-time memory address of a known function that has already been resolved (like `puts`), we gain an anchor point. We calculate the library's actual base address by subtracting the known offset of `puts` from the leaked address. Once the dynamic base address is established, we can pinpoint the exact location of any other function (like `system()`) by adding its specific offset.
+By forcing the program to leak the real-time memory address of a known function that has already been resolved (like `puts`), I gain an anchor point. I calculate the library's actual base address by subtracting the known offset of `puts` from the leaked address. Once the dynamic base address is established, I can pinpoint the exact location of any other function (like `system()`) by adding its specific offset.
 
 ### Memory Layout Diagram
 The following diagram illustrates how the internal offsets remain fixed even when the base address shifts unpredictably between runs:
@@ -77,3 +89,36 @@ Run 1 (ASLR active)                           Run 2 (ASLR active)
        | (Fixed Distance: +0x200)                    | (Fixed Distance: +0x200)
        v                                             v
 [ system() at 0x7f...1700] <CALC              [ system() at 0x7f...9700] <CALC
+```
+
+---
+
+## Exercise 3: The Stack Alignment Issue (movaps crash)
+
+### The Experiment
+To understand the importance of memory alignment in 64-bit exploitation, I intentionally removed the alignment gadget (`ret`) from the second stage of the ROP chain. I then executed the exploit to observe how the system responds.
+
+### Execution & Crash Results
+Without the alignment gadget, the script successfully bypassed ASLR and calculated the libc base, but it crashed immediately when attempting to execute the `system()` function.
+
+```text
+Command: python3 exploit.py
+
+Output:
+[*] libc base: 0x7f5b9d400000
+[*] Switching to interactive mode
+[*] Got EOF while reading in interactive
+[*] Process './vuln' stopped with exit code -11 (SIGSEGV)
+```
+
+### Root Cause Analysis: The movaps Instruction
+The crash (SIGSEGV) occurred due to a strict hardware requirement in the x86_64 architecture. Complex functions inside `libc`, such as `system()`, use an assembly instruction called `movaps` to move large amounts of data efficiently. 
+
+The `movaps` instruction demands that the stack pointer (`rsp`) is perfectly aligned to a 16-byte boundary (meaning the memory address must end in `0`). During my buffer overflow, I disrupted the natural stack structure, leaving `rsp` aligned only to 8 bytes (an address ending in `8`). When `system()` tried to execute `movaps` on this unaligned stack, the physical CPU hardware rejected the operation and threw a segmentation fault.
+
+### The Solution: A Single ret Gadget
+To fix this crash, I insert a single `ret` gadget into the ROP chain right before calling `system()`. 
+
+The `ret` instruction performs a simple action: it pops the top address from the stack and jumps to it. Because each address in a 64-bit system is exactly 8 bytes long, popping one address physically moves the stack pointer (`rsp`) exactly 8 bytes forward. 
+
+This tiny 8-byte shift pushes `rsp` from its unaligned state (ending in `8`) to a perfectly aligned 16-byte boundary (ending in `0`). Once the stack is aligned, the `movaps` instruction executes successfully, and the shell opens.
