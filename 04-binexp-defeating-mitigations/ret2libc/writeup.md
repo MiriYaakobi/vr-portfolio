@@ -122,3 +122,37 @@ To fix this crash, I insert a single `ret` gadget into the ROP chain right befor
 The `ret` instruction performs a simple action: it pops the top address from the stack and jumps to it. Because each address in a 64-bit system is exactly 8 bytes long, popping one address physically moves the stack pointer (`rsp`) exactly 8 bytes forward. 
 
 This tiny 8-byte shift pushes `rsp` from its unaligned state (ending in `8`) to a perfectly aligned 16-byte boundary (ending in `0`). Once the stack is aligned, the `movaps` instruction executes successfully, and the shell opens.
+
+---
+
+## Exercise 4: Comparing system() vs. one_gadget
+
+### The Hypothesis
+As an alternative to building a multi-stage ROP chain to call `system()`, I explored using a `one_gadget` payload. A One Gadget is a specific offset within the `libc` library that directly calls `execve("/bin/sh")` in a single jump. If successful, this technique bypasses the need to manually pass arguments via registers and shrinks the payload size.
+
+### Execution & Constraint Failures
+I used the `one_gadget` tool on the target's `libc.so.6` and extracted several potential offsets. I modified my exploit script to calculate the absolute address of these gadgets, commented out the `system()` ROP chain, and injected the single address into the stack. 
+
+However, testing the payload resulted in an immediate crash:
+
+```text
+[*] libc base: 0x721b24000000
+[*] Switching to interactive mode
+Done.
+[*] Got EOF while reading in interactive
+$ ls
+[*] Process './vuln' stopped with exit code -11 (SIGSEGV) (pid 11304)
+```
+
+### Root Cause Analysis
+One Gadgets are highly sensitive. Each offset requires specific memory constraints to be met at the exact moment of execution (e.g., requiring that `[r15] == NULL` or that the stack pointer is empty). 
+
+Because my exploit relies on a Buffer Overflow that deeply corrupts the stack, it leaves residual "garbage" data scattered throughout the CPU registers. Consequently, the strict constraints demanded by the One Gadgets were consistently unmet, leading to the segmentation fault.
+
+### Strategic Conclusion & Trade-offs
+Faced with these crashes, I analyzed two potential workarounds and ultimately decided against both for professional operational reasons:
+
+1. **Manual Register Zeroing (ROP):** I could theoretically search for additional ROP gadgets (like `pop r15; ret`) to manually clear the required registers before jumping to the One Gadget. However, doing so completely negates the primary advantage of a One Gadget: simplicity. If I must build a complex ROP chain just to satisfy constraints, it is inherently more reliable to build the standard ROP chain for `system()`, as it only requires controlling a single register (`rdi`).
+2. **Brute-Forcing Offsets (Loop):** Writing a loop to automatically try every possible `one_gadget` offset is technically possible but operationally unsafe (poor OPSEC). In a real-world scenario, each failed constraint crashes the target process. Repeatedly crashing a service triggers EDR/SOC alerts and risks a Denial of Service (DoS) if the process does not restart. 
+
+**Verdict:** The traditional `system()` ROP chain (documented in Exercise 1) proved to be the most robust, architecturally sound, and "single-shot" reliable approach for this specific exploitation scenario. I have left the `one_gadget` payload commented out in my final script to document this research attempt.
