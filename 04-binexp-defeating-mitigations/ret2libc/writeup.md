@@ -156,3 +156,28 @@ Faced with these crashes, I analyzed two potential workarounds and ultimately de
 2. **Brute-Forcing Offsets (Loop):** Writing a loop to automatically try every possible `one_gadget` offset is technically possible but operationally unsafe (poor OPSEC). In a real-world scenario, each failed constraint crashes the target process. Repeatedly crashing a service triggers EDR/SOC alerts and risks a Denial of Service (DoS) if the process does not restart. 
 
 **Verdict:** The traditional `system()` ROP chain (documented in Exercise 1) proved to be the most robust, architecturally sound, and "single-shot" reliable approach for this specific exploitation scenario. I have left the `one_gadget` payload commented out in my final script to document this research attempt.
+
+---
+
+## Exercise 5: picoGym Binary Exploitation Challenges
+
+### Challenge 1: Local Target
+- **Category:** Binary Exploitation (Local Variable Overwrite)
+- **Objective:** Bypass an authentication check by overflowing a buffer to overwrite an adjacent local variable (`num`) on the stack, changing its integer value from 64 to 65.
+- **Pattern & Methodology:**
+  Through static analysis of the source code, I identified a `gets(input)` call writing into a 16-byte buffer (`char input[16]`). Because `gets()` lacks bounds checking, it allows writing past the allocated space to overwrite the adjacent `num` variable.
+  1. **Finding the Offset (Dynamic Fuzzing):** I used dynamic fuzzing to find the exact overwrite offset. Sending 16 bytes did not affect `num`. By incrementing the payload length, I discovered the variable changed exactly at the 25th byte, establishing a 24-byte offset.
+  2. **Stack Alignment:** The buffer is 16 bytes, but the offset is 24. This 8-byte discrepancy is due to compiler stack alignment. GCC pads variables to 16-byte boundaries for memory optimization, adding 8 bytes of invisible padding before `num`.
+  3. **Payload Construction:** The goal is to change `num` to 65. In the ASCII table, the character 'A' equals 65 (`0x41`). Due to the system's Little Endian architecture, overwriting the least significant byte of `num` with 'A' perfectly sets its integer value to 65. The final payload requires exactly 25 'A's (24 to fill the buffer and padding, plus 1 to overwrite the target byte).
+- **Execution Evidence (Terminal Output):**
+  Given the simplicity of the payload, I utilized a terminal one-liner to pipe the string directly into the remote instance rather than writing a full Python script.
+
+  ```bash
+  $ python3 -c "print('A'*25)" | nc chatelaine.cylabacademy.net 21194
+  Enter a string: 
+  num is 65
+  You win!
+  academy{l0c4l5_1n_5c0p3_5ab331e4}
+  ```
+- **Solution:** A 25-byte payload of 'A' characters successfully traverses the buffer, the compiler padding, and overwrites the target variable.
+- **Flag:** `academy{l0c4l5_1n_5c0p3_5ab331e4}`
