@@ -10,3 +10,6 @@ flag*.txt
 # 03-binexp-control-flow: Downloaded and locally compiled challenge binaries
 03-binexp-control-flow/ret2win/format-string-0/format-string-0
 03-binexp-control-flow/ret2win/vuln
+
+# 04-binexp-defeating-mitigations: Downloaded challenge binaries
+04-binexp-defeating-mitigations/picogym/local-target/local-target
