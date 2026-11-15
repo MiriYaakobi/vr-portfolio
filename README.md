@@ -7,7 +7,7 @@ This repository tracks my progress through the Cyber Security Researcher track, 
 - [x] **Memory Analysis:** Stack frame mapping, stack alignment, and basic buffer overflow mechanics.
 - [x] **Reverse Engineering:** Static and dynamic analysis of stripped ELF binaries, XOR-obfuscated validation, System V AMD64 calling convention, and picoGym writeups.
 - [x] **Binary Exploitation (Control Flow):** Buffer overflows, Return-Oriented Programming (ROP), parameter passing, and Format String vulnerabilities.
-- [ ] **Binary Exploitation (Mitigations):** (Under construction)
+- [x] **Binary Exploitation (Mitigations):** ASLR/NX bypass, ret2libc, Format String information leaks, and PIE dynamic base calculation.
 - [ ] **CVE Analysis & Web Security:** (Under construction)
 
 ## Tech Stack
@@ -54,7 +54,7 @@ python3 exploit_args.py
 01-foundations/                 # Stack memory layout, GDB static/dynamic analysis, and overflow concepts
 02-reverse-engineering/         # Ghidra, GDB/pwndbg, and picoGym evidence; see 02-reverse-engineering/writeup.md
 03-binexp-control-flow/         # ret2win, ROP with args, Canary impact, Format String; see writeup.md
-04-binexp-defeating-mitigations/# (Pending)
+04-binexp-defeating-mitigations/# ASLR/NX bypass (ret2libc), PIE bypass; see pie_time_2_writeup.md
 05-ctf/                         # (Pending)
 06-web/                         # (Pending)
 07-cve-analysis/                # (Pending)
@@ -65,3 +65,4 @@ python3 exploit_args.py
 - **Module 01 (Foundations):** Mastered x86-64 stack frame layout, compiler stack alignment, and static/dynamic memory analysis using GDB/pwndbg. Practically demonstrated buffer overflow vulnerabilities by exploiting unconstrained input bounds.
 - **Module 02 (Reverse Engineering):** Reverse-engineered stripped ELF binaries and Python scripts. Bypassed XOR obfuscation, analyzed System V AMD64 calling conventions, and extracted secrets using static (Ghidra) and dynamic (GDB) analysis.
 - **Module 03 (Binary Exploitation - Control Flow):** Executed control flow hijacking via stack buffer overflows. Calculated exact offsets dynamically using pwntools, corrected 64-bit stack alignment issues (SSE/movaps) using ROP gadgets (`ret`), demonstrated the crash impact of Stack Canaries, built advanced ROP chains to pass arguments via registers (`RDI`), and exploited Format String vulnerabilities to intentionally crash a remote server and extract flags.
+- **Module 04 (Binary Exploitation - Defeating Mitigations):** Bypassed modern memory protections (ASLR, NX, PIE). Developed ret2libc ROP chains to spawn shells, solved CPU stack alignment constraints (`movaps`), and leveraged Format String vulnerabilities to dynamically calculate randomized base addresses at runtime.
