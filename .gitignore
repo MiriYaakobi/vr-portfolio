@@ -13,3 +13,4 @@ flag*.txt
 
 # 04-binexp-defeating-mitigations: Downloaded challenge binaries
 04-binexp-defeating-mitigations/picogym/local-target/local-target
+04-binexp-defeating-mitigations/picogym/pie-time-2/vuln
