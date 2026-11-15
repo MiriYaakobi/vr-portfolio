@@ -181,3 +181,26 @@ Faced with these crashes, I analyzed two potential workarounds and ultimately de
   ```
 - **Solution:** A 25-byte payload of 'A' characters successfully traverses the buffer, the compiler padding, and overwrites the target variable.
 - **Flag:** `academy{l0c4l5_1n_5c0p3_5ab331e4}`
+
+### Challenge 2: PIE TIME 2
+- **Category:** Binary Exploitation (Defeating Mitigations - PIE Bypass via Format String)
+- **Objective:** Bypass Position Independent Executable (PIE) mitigation by leaking a memory address via a Format String vulnerability, calculating the dynamic binary base address manually, and jumping to a hidden `win` function to retrieve the flag.
+- **Pattern & Methodology:**
+  The binary is protected by PIE, meaning its base address is randomized at runtime, making hardcoded jumps impossible. However, the internal layout (offsets) of the binary remains static. The program contained two vulnerabilities: an unmitigated `printf(buffer)` allowing a format string attack, and a subsequent function prompt asking for a raw memory address to jump to.
+  1. **Static Analysis (Offset Identification):** Using GDB, I disassembled the binary locally to find the static offsets of key functions. I identified the offset for `main` as `0x1418` and the target `win` function as `0x1376`.
+  2. **Information Leak (Dynamic Anchor):** Upon executing the binary on the remote server, I fed a payload of `%p` specifiers (`%p%p%p...`) into the name prompt. This triggered the format string vulnerability, dumping raw values from the stack.
+  3. **Identifying the Leak & Calculating the Base:** PIE randomizes the base address but preserves the lower 12 bits (the last 3 hexadecimal digits) of internal offsets. Examining the leaked stack values, I located `0x61ebee99f418`—which perfectly matched the `418` ending of my static `main` offset. I calculated the dynamic PIE base address by subtracting the static offset from the leaked address: 
+     `0x61ebee99f418 - 0x1418 = 0x61ebee99e000`.
+  4. **Target Resolution & Exploitation:** With the base address found, I added the static offset of the `win` function to determine its exact location in the current randomized runtime environment: 
+     `0x61ebee99e000 + 0x1376 = 0x61EBEE99F376`. I supplied this calculated address to the jump prompt, hijacking the control flow directly into the `win` function.
+- **Execution Evidence (Terminal Output):**
+  ```bash
+  $ nc xebec.cylabacademy.net 17159
+  Enter your name:%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p
+  0x61ec28d6f2a10xfbad20880x7502109e7d310x61ec28d6f2db(nil)0x7ffd5238a2000x75021095e4f50x7025702570257025...0x61ebee99f418...
+   enter the address to jump to, ex => 0x12345: 0x61EBEE99F376
+  You won!
+  academy{p13_5h0u1dn'7_134k_13db9a90}
+  ```
+- **Solution:** Leveraged a Format String vulnerability to leak a stack address, identified the randomized location of `main` using static offset alignment (the last 3 hex digits), calculated the dynamic PIE base, and successfully resolved the address of the `win` function to execute arbitrary code logic.
+- **Flag:** `academy{p13_5h0u1dn'7_134k_13db9a90}`
