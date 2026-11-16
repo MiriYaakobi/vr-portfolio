@@ -5,7 +5,7 @@ echo "   ret2libc Automated Integration Test  "
 echo "========================================"
 
 echo "[*] Compiling target binary..."
-gcc -fno-stack-protector -no-pie vuln.c -o vuln 2>/dev/null
+make
 
 echo -e "\n[*] TEST 1: Happy Path (ASLR/NX Bypass)"
 # Run the exploit in test mode so it sends 'whoami' and exits cleanly instead of hanging in interactive mode
