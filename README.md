@@ -52,14 +52,6 @@ chmod +x test_ret2libc.sh
 ./test_ret2libc.sh
 ```
 
-Alternatively, to run the exploits manually:
-```bash
-cd 03-binexp-control-flow/ret2win
-gcc -fno-stack-protector -no-pie vuln.c -o vuln
-python3 exploit.py
-python3 exploit_args.py
-```
-
 ## Project Structure
 ```text
 00-lab-setup/                   # Reproducible lab environment setup
