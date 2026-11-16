@@ -33,11 +33,23 @@ make clean
 ```
 
 ## Running Exploits
-To test the basic buffer overflow and advanced ROP payloads (Module 03), use the automated integration test script which builds the binary with and without stack canaries:
+
+### Module 03: Control Flow (ret2win)
+To test the basic buffer overflow and advanced ROP payloads, use the automated integration test script:
 ```bash
 cd 03-binexp-control-flow/ret2win
 chmod +x test_ret2win.sh
 ./test_ret2win.sh
+```
+*(Alternatively, compile manually with `gcc -fno-stack-protector -no-pie vuln.c -o vuln` and run `python3 exploit.py`)*
+
+### Module 04: Defeating Mitigations (ret2libc)
+To run the robust, state-based integration test for ASLR/NX bypass and stack alignment constraints:
+```bash
+cd 04-binexp-defeating-mitigations/ret2libc
+gcc -fno-stack-protector -no-pie vuln.c -o vuln 2>/dev/null
+chmod +x test_ret2libc.sh
+./test_ret2libc.sh
 ```
 
 Alternatively, to run the exploits manually:
@@ -54,7 +66,7 @@ python3 exploit_args.py
 01-foundations/                 # Stack memory layout, GDB static/dynamic analysis, and overflow concepts
 02-reverse-engineering/         # Ghidra, GDB/pwndbg, and picoGym evidence; see 02-reverse-engineering/writeup.md
 03-binexp-control-flow/         # ret2win, ROP with args, Canary impact, Format String; see writeup.md
-04-binexp-defeating-mitigations/# ASLR/NX bypass (ret2libc), PIE bypass; see pie_time_2_writeup.md
+04-binexp-defeating-mitigations/# ASLR/NX bypass (ret2libc), PIE bypass; see writeup.md
 05-ctf/                         # (Pending)
 06-web/                         # (Pending)
 07-cve-analysis/                # (Pending)
