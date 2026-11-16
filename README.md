@@ -66,7 +66,7 @@ python3 exploit_args.py
 01-foundations/                 # Stack memory layout, GDB static/dynamic analysis, and overflow concepts
 02-reverse-engineering/         # Ghidra, GDB/pwndbg, and picoGym evidence; see 02-reverse-engineering/writeup.md
 03-binexp-control-flow/         # ret2win, ROP with args, Canary impact, Format String; see writeup.md
-04-binexp-defeating-mitigations/# ASLR/NX bypass (ret2libc), PIE bypass; see writeup.md
+04-binexp-defeating-mitigations/ # ASLR/NX bypass in ret2libc/, picoGym challenges (local-target, pie-time-2) in picogym/; see main writeup.md
 05-ctf/                         # (Pending)
 06-web/                         # (Pending)
 07-cve-analysis/                # (Pending)
