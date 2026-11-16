@@ -8,7 +8,7 @@ flag*.txt
 02-reverse-engineering/picogym/gdb-baby-step-2/debugger0_b
 
 # 03-binexp-control-flow: Downloaded and locally compiled challenge binaries
-03-binexp-control-flow/ret2win/format-string-0/format-string-0
+03-binexp-control-flow/format-string-0/format-string-0
 03-binexp-control-flow/ret2win/vuln
 
 # 04-binexp-defeating-mitigations: Downloaded challenge binaries
