@@ -4,9 +4,6 @@ echo "========================================"
 echo "   ret2libc Automated Integration Test  "
 echo "========================================"
 
-echo "[*] Compiling target binary..."
-make
-
 echo -e "\n[*] TEST 1: Happy Path (ASLR/NX Bypass)"
 # Run the exploit in test mode so it sends 'whoami' and exits cleanly instead of hanging in interactive mode
 python3 exploit.py TEST > out_success.txt 2>&1
