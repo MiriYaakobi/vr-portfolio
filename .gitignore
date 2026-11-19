@@ -18,3 +18,4 @@ flag*.txt
 # 05-ctf: Downloaded and locally compiled challenge binaries
 05-ctf/picogym-binexp/pie-time/vuln
 05-ctf/picogym-binexp/heap-0/chall
+05-ctf/picogym-binexp/format-string-1/format-string-1

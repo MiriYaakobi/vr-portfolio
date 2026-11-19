@@ -93,3 +93,52 @@
 * **Solution:** Calculated the `0x20` (32-byte) offset between the two adjacent heap chunks and sent a minimal 33-byte payload to overflow `input_data` and its chunk metadata, overwriting the start of `safe_var` to `"A"` and bypassing the `strcmp` check.
 
 * **Flag:** `academy{my_first_heap_overflow_dc62a472}`
+
+---
+
+## Challenge 3: format string 1
+
+* **Category:** Binary Exploitation (Format String Vulnerability - Stack Memory Leak)
+
+* **Objective:** Exploit an unmitigated `printf(buf)` call to leak the contents of a local stack buffer (`flag[64]`) in hexadecimal format and decode it from Little-Endian into ASCII text.
+
+* **Pattern & Methodology:**
+  Static analysis of the C source code revealed that the program reads three files (`secret-menu-item-1.txt`, `flag.txt`, and `secret-menu-item-2.txt`) into local 64-byte stack buffers (`secret1`, `flag`, `secret2`). It then reads user input into `buf` and prints it directly via `printf(buf)` without a format specifier.
+  My initial intuitive approach was to send a long sequence of `%p` specifiers to dump raw stack values, spot the 8-byte blocks containing ASCII-range bytes, and decode them manually. However, to solve the challenge cleanly and precisely without guesswork or noisy output, I moved to a structured debugging and extraction methodology:
+
+1. **Dynamic Stack Mapping in GDB:** I created dummy `.txt` files locally, loaded the binary in GDB, and set a breakpoint right before the vulnerable `printf(buf)` call (`0x401327`). Running the program and inspecting the stack with `x/25gx $rsp` showed:
+
+   * Top of the stack (`$rsp`): `0x7fffffffd590`
+
+   * Start of the `flag` buffer: `0x7fffffffd5d0`
+
+2. **Calculating the Exact Parameter Index:** I calculated the distance from `$rsp` to `flag`:
+   `0x7fffffffd5d0 - 0x7fffffffd590 = 0x40` (**64 bytes**).
+   Since each stack slot on 64-bit Linux is 8 bytes, `flag` starts `64 / 8 = 8` slots down the stack. Under the x86-64 System V calling convention, the first 5 format arguments (`%1$p` to `%5$p`) are read from registers (`rsi`, `rdx`, `rcx`, `r8`, `r9`), and `%6$p` is the first slot at `$rsp`. Therefore, the exact starting index of `flag` is:
+   `6 + 8 = 14` (`%14$p`).
+   Because `flag` is 64 bytes long (8 blocks of 8 bytes), its full range spans from `%14$p` to `%21$p`.
+
+3. **Targeted Extraction (Direct Parameter Access):** Instead of dumping the entire stack, I used Direct Parameter Access (`%N$p`) with `.` delimiters to extract only the 8 blocks corresponding to `flag[64]`:
+   `%14$p.%15$p.%16$p.%17$p.%18$p.%19$p.%20$p.%21$p`.
+   Using `%p` safely prints 8-byte chunks without crashing the program (unlike `%s`, which would dereference the ASCII text as an invalid memory address).
+
+4. **Little-Endian Decoding (Python One-Liner):** Inspecting the leaked blocks, the first 5 chunks contained ASCII text ending with `0x7d` (`}`), while the remaining 3 chunks were residual stack data. Because x86-64 stores multi-byte values in Little-Endian order, I used a Python one-liner to strip the `0x` prefixes, convert each hex chunk to bytes, reverse the byte order (`[::-1]`), and decode the result to ASCII.
+
+* **Execution Evidence (Terminal Output):**
+
+  ```
+  $ nc xebec.cylabacademy.net 25419
+  
+  Give me your order and I'll read it back to you:
+  %14$p.%15$p.%16$p.%17$p.%18$p.%19$p.%20$p.%21$p
+  Here's your order: 0x7b796d6564616361.0x355f31346d316e34.0x3478345f33317937.0x31395f673431665f.0x7d646539656166.0x7fffc77e5738.0x7fffc77e5830.0xffffffff
+  Bye!
+  
+  $ python3 -c 's="0x7b796d6564616361.0x355f31346d316e34.0x3478345f33317937.0x31395f673431665f.0x7d646539656166"; print("".join(bytes.fromhex(x[2:])[::-1].decode() for x in s.split(".")))'
+  academy{4n1m41_57y13_4x4_f14g_91fae9ed}
+  
+  ```
+
+* **Solution:** Mapped the stack layout in GDB to calculate the exact format string offset (`%14$p`–`%21$p`) for the local `flag` buffer, leaked the raw hex values using Direct Parameter Access, and decoded the 5 Little-Endian chunks into the flag via a Python one-liner.
+
+* **Flag:** `academy{4n1m41_57y13_4x4_f14g_91fae9ed}`
